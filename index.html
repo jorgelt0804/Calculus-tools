@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Solid of Revolution — Calculus Visualization</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f5f7;color:#1a1a2e;padding:14px}
+.header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.header h1{font-size:17px;font-weight:700}
+.header p{font-size:12.5px;color:#666;margin-top:2px}
+.lang-toggle{display:flex;border:1px solid #d1d5db;border-radius:8px;overflow:hidden;height:32px}
+.lang-btn{padding:0 13px;font-size:12px;font-weight:600;border:none;background:#fff;color:#555;cursor:pointer}
+.lang-btn.active{background:#3a3296;color:#fff}
+.card{background:#fff;border-radius:12px;border:1px solid #e2e4e9;margin-bottom:12px;overflow:hidden}
+.method-tabs{display:flex;border-bottom:1px solid #e2e4e9;background:#fafafa}
+.tab{flex:1;padding:9px 4px;font-size:12.5px;font-weight:500;text-align:center;cursor:pointer;color:#666;border:none;border-bottom:3px solid transparent;background:transparent;transition:all .15s}
+.tab:hover{color:#3a3296;background:#f0effe}
+.tab.active{color:#3a3296;border-bottom-color:#3a3296;background:#fff}
+.controls{padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:100px}
+label{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em}
+input[type="text"],input[type="range"],select{height:34px;padding:0 9px;border:1px solid #d1d5db;border-radius:7px;font-size:13.5px;background:#fff;color:#1a1a2e;width:100%;transition:border-color .15s,box-shadow .15s}
+input[type="range"]{padding:0;cursor:pointer;accent-color:#3a3296}
+input[type="text"]:focus,select:focus{outline:none;border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.15)}
+.stip{font-size:11px;color:#888;margin-top:1px;line-height:1.4}
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-primary{height:36px;padding:0 20px;background:#3a3296;color:#fff;border:none;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:#2a2270}
+.fn-row{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;width:100%}
+.fn-color-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(0,0,0,.15)}
+.fn-role{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:80px}
+.fn-input{height:34px;padding:0 9px;border:1px solid #d1d5db;border-radius:7px;font-size:13.5px;background:#fff;color:#1a1a2e;flex:1;min-width:100px;transition:border-color .15s,box-shadow .15s}
+.fn-input:focus{outline:none;border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.15)}
+.fn-remove{width:26px;height:26px;border-radius:6px;border:1px solid #e2e4e9;background:#fff;color:#999;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.fn-remove:hover{background:#fef2f2;color:#dc2626;border-color:#fca5a5}
+.btn-add-fn{height:30px;padding:0 13px;background:#f0effe;color:#3a3296;border:1px solid #c7c2ee;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-add-fn:hover{background:#3a3296;color:#fff;border-color:#3a3296}
+#fn-container{display:flex;flex-direction:column;gap:7px}
+.examples-bar{border-top:1px solid #e2e4e9;padding:8px 14px;background:#fafafa;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ex-label{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.ex-btn{padding:3px 10px;font-size:11.5px;font-weight:500;border:1px solid #c7c2ee;border-radius:20px;background:#f0effe;color:#3a3296;cursor:pointer;transition:all .15s;white-space:nowrap}
+.ex-btn:hover{background:#3a3296;color:#fff;border-color:#3a3296}
+.err-msg{display:none;font-size:12px;color:#991b1b;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:5px 9px}
+.formula-bar{background:#f0effe;border-top:1px solid #e2e4e9;padding:7px 14px;font-size:13px;color:#3a3296;font-weight:500;display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-height:34px}
+.badge{background:#3a3296;color:#fff;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.volume-bar{border-top:1px solid #e2e4e9;background:#f0fff6;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.vol-label{font-size:11px;font-weight:700;color:#0a6640;text-transform:uppercase;letter-spacing:.04em}
+.vol-val{font-size:17px;font-weight:700;color:#0a6640}
+.vol-note{font-size:11px;color:#555}
+/* rect slider bar */
+.slider-bar{border-top:1px solid #e2e4e9;padding:7px 14px;background:#fffbf0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.slider-bar label{font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;height:auto}
+.slider-bar input[type="range"]{height:22px;flex:1;min-width:120px;max-width:280px}
+.slider-val{font-size:12px;font-weight:600;color:#92400e;min-width:40px}
+/* views */
+.views-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e2e4e9}
+@media(max-width:640px){.views-grid{grid-template-columns:1fr}}
+.view-panel{display:flex;flex-direction:column;border-right:1px solid #e2e4e9}
+.view-panel:last-child{border-right:none}
+.view-header{padding:7px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#555;background:#fafafa;border-bottom:1px solid #e2e4e9;display:flex;align-items:center;gap:6px}
+.view-header .vtitle{color:#3a3296}
+.view-header .vtag{color:#999;font-weight:400;text-transform:none;font-size:10.5px}
+.canvas2d-wrap{width:100%;height:380px;position:relative;background:#fff;overflow:hidden}
+canvas#c2d{display:block;width:100%;height:100%}
+.canvas3d-wrap{width:100%;height:380px;position:relative;background:#ffffff;overflow:hidden;cursor:grab}
+.canvas3d-wrap:active{cursor:grabbing}
+canvas#c3d{display:block;width:100%;height:100%}
+.canvas3d-hint{position:absolute;bottom:8px;left:10px;font-size:10.5px;color:rgba(30,30,60,.50);pointer-events:none}
+.zoom-btns{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:10}
+.zoom-btn{width:30px;height:30px;background:rgba(255,255,255,.92);border:1px solid #d1d5db;border-radius:6px;font-size:17px;font-weight:700;color:#3a3296;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:background .12s}
+.zoom-btn:hover{background:#f0effe}
+.axis-labels-3d{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.info-footer{padding:8px 14px;font-size:11.5px;color:#666;background:#f9fafb;border-top:1px solid #e2e4e9;line-height:1.5}
+.info-footer strong{color:#3a3296}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1 id="ttl">Solid of Revolution — Interactive Visualization</h1>
+    <p id="sub">Disk, Washer &amp; Shell Methods &nbsp;|&nbsp; Calculus II</p>
+  </div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('en')">English</button>
+    <button class="lang-btn" onclick="setLang('es')">Español</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="method-tabs">
+    <button class="tab active" data-method="disk"   onclick="selMethod(this)">⊙ <span class="T" data-k="mDisk">Disk method</span></button>
+    <button class="tab" data-method="washer" onclick="selMethod(this)">◯ <span class="T" data-k="mWasher">Washer method</span></button>
+    <button class="tab" data-method="shell"  onclick="selMethod(this)">▮ <span class="T" data-k="mShell">Shell method</span></button>
+  </div>
+  <div class="controls">
+    <div>
+      <div id="fn-container"></div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn-add-fn" id="addFnBtn" onclick="addFnRow()">+ Add function</button>
+        <span class="stip">^ powers · * multiply · sqrt() sin() cos() tan() exp() ln() abs() pi</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field" style="max-width:90px"><label>Lower limit a</label><input type="text" id="aVal" value="0" onkeydown="if(event.key==='Enter')draw()"/></div>
+      <div class="field" style="max-width:90px"><label>Upper limit b</label><input type="text" id="bVal" value="4" onkeydown="if(event.key==='Enter')draw()"/></div>
+      <div class="field" style="max-width:210px">
+        <label>Axis of revolution</label>
+        <select id="axis" onchange="onAxisChange()">
+          <option value="xaxis">x-axis (y = 0)</option>
+          <option value="yaxis">y-axis (x = 0)</option>
+          <option value="cust_h">Horizontal line y = k</option>
+          <option value="cust_v">Vertical line x = k</option>
+        </select>
+      </div>
+      <div class="field hidden" id="kwrap" style="max-width:72px">
+        <label id="klbl">k</label>
+        <input type="text" id="kVal" value="1" onkeydown="if(event.key==='Enter')draw()"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="draw()">▶ <span class="T" data-k="drawBtn">Draw</span></button>
+        <button class="btn-add-fn" id="detectBtn" onclick="detectAndDraw()" title="Auto-detect limits from intersections" style="height:36px;padding:0 14px;font-size:12.5px">
+          🎯 <span class="T" data-k="detectBtn">Auto limits</span>
+        </button>
+      </div>
+    </div>
+    <div class="err-msg" id="errMsg"></div>
+  </div>
+
+  <div class="examples-bar">
+    <span class="ex-label T" data-k="exLbl">Examples:</span>
+    <button class="ex-btn" onclick="loadEx('d1')">⊙ sqrt(x), [0,4]</button>
+    <button class="ex-btn" onclick="loadEx('d2')">⊙ x², [0,2], y-axis</button>
+    <button class="ex-btn" onclick="loadEx('d3')">⊙ sin(x), [0,π]</button>
+    <button class="ex-btn" onclick="loadEx('w1')">◯ x vs x², [0,1]</button>
+    <button class="ex-btn" onclick="loadEx('w2')">◯ sqrt(x) vs x</button>
+    <button class="ex-btn" onclick="loadEx('s1')">▮ x², [0,2], y-axis</button>
+    <button class="ex-btn" onclick="loadEx('s2')">▮ sin(x), [0,π]</button>
+  </div>
+
+  <div class="formula-bar">
+    <span class="badge" id="mBadge">Disk</span>
+    <span id="fmla">V = &pi;&int;<sub>a</sub><sup>b</sup> [f(x)]&sup2; dx</span>
+  </div>
+
+  <!-- Representative rectangle slider -->
+  <div class="slider-bar" id="sliderBar">
+    <label id="sliderLbl" class="T" data-k="sliderLbl">Representative rectangle at x =</label>
+    <input type="range" id="rectSlider" min="0" max="1" step="0.001" value="0.5" oninput="onSlider()"/>
+    <span class="slider-val" id="sliderVal">x = 2.00</span>
+  </div>
+
+  <div class="volume-bar hidden" id="volBar">
+    <span class="vol-label T" data-k="volLbl">Volume:</span>
+    <span class="vol-val" id="volVal"></span>
+    <span class="vol-note" id="volNote"></span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="views-grid">
+    <div class="view-panel">
+      <div class="view-header">
+        📐 2D — <span class="vtitle T" data-k="v2d">Region &amp; axis</span>
+        <span class="vtag">(Canvas 2D)</span>
+      </div>
+      <div class="canvas2d-wrap" id="wrap2d">
+        <canvas id="c2d"></canvas>
+        <div class="zoom-btns" id="zoom2d-btns">
+          <button class="zoom-btn" onclick="zoom2dIn()" title="Zoom in">+</button>
+          <button class="zoom-btn" onclick="zoom2dOut()" title="Zoom out">−</button>
+          <button class="zoom-btn" onclick="zoom2dReset()" title="Reset view" style="font-size:13px">⟳</button>
+        </div>
+      </div>
+    </div>
+    <div class="view-panel">
+      <div class="view-header">
+        🔄 3D — <span class="vtitle T" data-k="v3d">Solid of revolution</span>
+        <span class="vtag">(WebGL)</span>
+      </div>
+      <div class="canvas3d-wrap" id="wrap3d">
+        <canvas id="c3d"></canvas>
+        <svg id="axis-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible"></svg>
+        <div class="zoom-btns">
+          <button class="zoom-btn" onclick="zoomIn()" title="Zoom in">+</button>
+          <button class="zoom-btn" onclick="zoomOut()" title="Zoom out">−</button>
+          <button class="zoom-btn" onclick="resetCam()" title="Reset view" style="font-size:13px">⟳</button>
+        </div>
+        <div class="canvas3d-hint T" data-k="hint3d">Drag to rotate · Scroll to zoom</div>
+      </div>
+    </div>
+  </div>
+  <div class="info-footer">
+    <strong>Tip:</strong> Drag the slider to move the representative rectangle across the region. Drag the 3D view to rotate · scroll to zoom. Works offline — zero external dependencies.
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ══════════════════════════════════════
+   SHARED MATH
+══════════════════════════════════════ */
+function mkFn(expr){
+  var s=expr
+    .replace(/\^/g,"**").replace(/\bsqrt\s*\(/g,"Math.sqrt(")
+    .replace(/\bsin\s*\(/g,"Math.sin(").replace(/\bcos\s*\(/g,"Math.cos(")
+    .replace(/\btan\s*\(/g,"Math.tan(").replace(/\bexp\s*\(/g,"Math.exp(")
+    .replace(/\bln\s*\(/g,"Math.log(").replace(/\blog\s*\(/g,"Math.log10(")
+    .replace(/\babs\s*\(/g,"Math.abs(").replace(/\bpi\b/gi,"Math.PI").replace(/\be\b/g,"Math.E");
+  return Function("x","return ("+s+")");
+}
+function simp(fn,a,b,n){
+  n=n%2?n+1:n; var h=(b-a)/n,s=fn(a)+fn(b);
+  for(var i=1;i<n;i++) s+=(i%2?4:2)*fn(a+i*h); return h/3*s;
+}
+function getUI(){
+  var fns=[];
+  document.querySelectorAll(".fn-input-field").forEach(function(inp){
+    var v=inp.value.trim(); if(v) fns.push(v);
+  });
+  return{
+    method:document.querySelector(".tab.active").dataset.method,
+    f1: fns[0]||"",
+    f2: fns[1]||"",
+    fns: fns,  // full array
+    a:parseFloat(document.getElementById("aVal").value),
+    b:parseFloat(document.getElementById("bVal").value),
+    axis:document.getElementById("axis").value,
+    k:parseFloat(document.getElementById("kVal").value||"0")||0
+  };
+}
+function showErr(msg){var e=document.getElementById("errMsg");e.textContent="⚠ "+msg;e.style.display="block";}
+function clrErr(){document.getElementById("errMsg").style.display="none";}
+function validate(ui){
+  clrErr();
+  if(!ui.fns||ui.fns.length===0){showErr("Enter at least one function.");return false;}
+  for(var i=0;i<ui.fns.length;i++){
+    try{mkFn(ui.fns[i])(1);}catch(e){showErr("Cannot parse function "+(i+1)+': "'+ui.fns[i]+'". Check syntax.');return false;}
+  }
+  if(isNaN(ui.a)||isNaN(ui.b)){showErr("Limits a and b must be numbers.");return false;}
+  if(ui.a>=ui.b){showErr("a must be less than b.");return false;}
+  return true;
+}
+function calcVol(ui){
+  // For multi-function: treat upper envelope as max of all fns, lower as min
+  // For washer/shell with 2+ fns: outer = fn[0], inner = fn[1], extra fns shown only
+  try{
+    var fns=ui.fns.map(function(e){return mkFn(e);});
+    var f=fns[0];
+    var g=(ui.method==="washer"&&fns.length>1)?fns[1]:null;
+    // Ensure f is the outer (larger) function to avoid negative volume
+    if(g){
+      var mid2=(ui.a+ui.b)/2;
+      try{ if(g(mid2)>f(mid2)){var tmp=f;f=g;g=tmp;} }catch(e){}
+    }
+    var a=ui.a,b=ui.b,k=ui.k||0,N=1200,V=0;
+    if(ui.method==="disk"){
+      if(ui.axis==="xaxis")       V=Math.PI*simp(function(x){var v=f(x);return v*v;},a,b,N);
+      else if(ui.axis==="yaxis")  V=2*Math.PI*simp(function(x){return x*f(x);},a,b,N);
+      else if(ui.axis==="cust_h") V=Math.PI*simp(function(x){var v=f(x)-k;return v*v;},a,b,N);
+      else                         V=2*Math.PI*simp(function(x){return Math.abs(x-k)*f(x);},a,b,N);
+    }else if(ui.method==="washer"){
+      if(!g) return null;
+      if(ui.axis==="xaxis")       V=Math.PI*simp(function(x){var fo=f(x),gi=g(x);return fo*fo-gi*gi;},a,b,N);
+      else if(ui.axis==="yaxis")  V=2*Math.PI*simp(function(x){return x*(f(x)-g(x));},a,b,N);
+      else if(ui.axis==="cust_h") V=Math.PI*simp(function(x){var fo=f(x)-k,gi=g(x)-k;return fo*fo-gi*gi;},a,b,N);
+      else                         V=2*Math.PI*simp(function(x){return Math.abs(x-k)*(f(x)-g(x));},a,b,N);
+    }else{
+      // Shell method: volume formula depends on axis of revolution
+      // Vertical axis (y-axis / x=k): V = 2π∫|x-axis|·h(x)dx
+      //   where h(x) = f(x)-g(x) if two fns, else f(x)
+      // Horizontal axis (x-axis / y=k): rotate region between f and g around axis
+      //   = same as washer formula: π∫((f-axis)²-(g-axis)²)dx
+      //   Single fn: π∫(f-axis)²dx
+      if(ui.axis==="yaxis"){
+        if(g) V=2*Math.PI*simp(function(x){return x*(f(x)-g(x));},a,b,N);
+        else   V=2*Math.PI*simp(function(x){return x*f(x);},a,b,N);
+      } else if(ui.axis==="cust_v"){
+        if(g) V=2*Math.PI*simp(function(x){return Math.abs(x-k)*(f(x)-g(x));},a,b,N);
+        else   V=2*Math.PI*simp(function(x){return Math.abs(x-k)*f(x);},a,b,N);
+      } else if(ui.axis==="xaxis"){
+        if(g){
+          var mid3=(a+b)/2, fo_x=f, gi_x=g;
+          try{if(g(mid3)>f(mid3)){fo_x=g;gi_x=f;}}catch(e){}
+          V=Math.PI*simp(function(x){var fo=fo_x(x),gi=gi_x(x);return fo*fo-gi*gi;},a,b,N);
+        } else V=Math.PI*simp(function(x){var v=f(x);return v*v;},a,b,N);
+      } else { // cust_h
+        if(g){
+          var mid4=(a+b)/2, fo_h=f, gi_h=g;
+          try{if(g(mid4)>f(mid4)){fo_h=g;gi_h=f;}}catch(e){}
+          V=Math.PI*simp(function(x){var fo=fo_h(x)-k,gi=gi_h(x)-k;return fo*fo-gi*gi;},a,b,N);
+        } else V=Math.PI*simp(function(x){var v=f(x)-k;return v*v;},a,b,N);
+      }
+    }
+    return isFinite(V)&&!isNaN(V)?V:null;
+  }catch(e){return null;}
+}
+function showVol(V){
+  var bar=document.getElementById("volBar");
+  if(V===null){bar.classList.add("hidden");return;}
+  bar.classList.remove("hidden");
+  document.getElementById("volVal").textContent=(V/Math.PI).toFixed(5)+" π  ≈  "+V.toFixed(5);
+  document.getElementById("volNote").textContent="cubic units (Simpson, n=1200)";
+}
+function niceStep(raw){
+  var p=Math.pow(10,Math.floor(Math.log10(raw)));
+  var f=raw/p;
+  if(f<1.5)return p; if(f<3.5)return 2*p; if(f<7.5)return 5*p; return 10*p;
+}
+
+/* ══════════════════════════════════════
+   2D CANVAS RENDERER
+══════════════════════════════════════ */
+var cvs2=document.getElementById("c2d");
+var ctx2=cvs2.getContext("2d");
+
+// Coordinate helpers — set per draw call
+var _sx,_sy;
+
+// 2D viewport: tracks current zoom/pan state
+var _vp2d = {xMin:null,xMax:null,yMin:null,yMax:null}; // null = auto
+var _vpAuto = {xMin:0,xMax:1,yMin:-0.5,yMax:2}; // saved from last auto
+
+function resize2d(){
+  var wrap=cvs2.parentElement;
+  cvs2.width=wrap.clientWidth||500;
+  cvs2.height=wrap.clientHeight||380;
+}
+
+window.zoom2dIn=function(){
+  var cx=(_vp2d.xMin+_vp2d.xMax)/2, cy=(_vp2d.yMin+_vp2d.yMax)/2;
+  var rX=(_vp2d.xMax-_vp2d.xMin)*0.35, rY=(_vp2d.yMax-_vp2d.yMin)*0.35;
+  _vp2d={xMin:cx-rX,xMax:cx+rX,yMin:cy-rY,yMax:cy+rY};
+  if(_lastUI&&validate(_lastUI)){var sl=parseFloat(document.getElementById("rectSlider").value);draw2d(_lastUI,sl);}
+};
+window.zoom2dOut=function(){
+  var cx=(_vp2d.xMin+_vp2d.xMax)/2, cy=(_vp2d.yMin+_vp2d.yMax)/2;
+  var rX=(_vp2d.xMax-_vp2d.xMin)*0.75, rY=(_vp2d.yMax-_vp2d.yMin)*0.75;
+  _vp2d={xMin:cx-rX,xMax:cx+rX,yMin:cy-rY,yMax:cy+rY};
+  if(_lastUI&&validate(_lastUI)){var sl=parseFloat(document.getElementById("rectSlider").value);draw2d(_lastUI,sl);}
+};
+window.zoom2dReset=function(){
+  _vp2d={xMin:_vpAuto.xMin,xMax:_vpAuto.xMax,yMin:_vpAuto.yMin,yMax:_vpAuto.yMax};
+  if(_lastUI&&validate(_lastUI)){var sl=parseFloat(document.getElementById("rectSlider").value);draw2d(_lastUI,sl);}
+};
+
+function draw2d(ui, rectX){
+  resize2d();
+  var W=cvs2.width, H=cvs2.height;
+  ctx2.clearRect(0,0,W,H);
+  ctx2.fillStyle="#ffffff"; ctx2.fillRect(0,0,W,H);
+
+  // Multi-function palette
+  var FN_COLORS=["#3a3296","#0d6e4c","#c2410c","#7c3aed","#b45309","#0e7490","#be185d"];
+  var FN_FILLS=["rgba(83,74,183,0.18)","rgba(13,110,76,0.18)","rgba(194,65,12,0.18)","rgba(124,58,237,0.18)"];
+  var fnParsed=ui.fns.map(function(e){try{return mkFn(e);}catch(err){return null;}});
+  var f1=fnParsed[0]||function(){return 0;};
+  var f2=(fnParsed.length>1)?fnParsed[1]:null;
+  var a=ui.a, b=ui.b, k=ui.k||0;
+  var N=300, dx=(b-a)/N;
+
+  // y range — scan ALL functions ONLY over [a,b]
+  var yMin=0,yMax=0;
+  for(var i=0;i<=N;i++){
+    var xi=a+i*dx;
+    fnParsed.forEach(function(fn){
+      if(!fn) return;
+      try{var v=fn(xi);if(isFinite(v)){yMin=Math.min(yMin,v);yMax=Math.max(yMax,v);}}catch(e){}
+    });
+  }
+  // Always include the axis of revolution line in the viewport
+  if(ui.axis==="cust_h"){yMin=Math.min(yMin,k);yMax=Math.max(yMax,k);}
+  if(ui.axis==="cust_v"){
+    // extend x-range to include the vertical line x=k
+    // show k plus a small margin on the far side
+    var kPad=Math.abs(b-a)*0.12;
+  }
+  yMin=Math.min(yMin-0.3,-0.5);
+  yMax=Math.max(yMax*1.15+0.5,1.5);
+
+  // Apply viewport: auto-compute if not zoomed, else use stored
+  var xPad=(b-a)*0.18;
+  // For cust_v, extend xMin to include k (may be to the left of a)
+  var rawXMin = (ui.axis==="cust_v") ? Math.min(a-xPad, k - Math.abs(b-a)*0.15) : a-xPad;
+  var rawXMax = (ui.axis==="cust_v") ? Math.max(b+xPad, k + Math.abs(b-a)*0.15) : b+xPad;
+  // For cust_h, extend yMin similarly (already done above)
+  var autoVP={xMin:rawXMin, xMax:rawXMax, yMin:yMin, yMax:yMax};
+  _vpAuto={xMin:autoVP.xMin,xMax:autoVP.xMax,yMin:autoVP.yMin,yMax:autoVP.yMax};
+  if(_vp2d.xMin===null){
+    _vp2d={xMin:autoVP.xMin,xMax:autoVP.xMax,yMin:autoVP.yMin,yMax:autoVP.yMax};
+  }
+  var vxMin=_vp2d.xMin, vxMax=_vp2d.xMax, vyMin=_vp2d.yMin, vyMax=_vp2d.yMax;
+  var vxRange=vxMax-vxMin, vyRange=vyMax-vyMin;
+
+  var pad={l:58,r:22,t:24,b:44};
+  var pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+
+  function sx(x){return pad.l+(x-vxMin)/vxRange*pw;}
+  function sy(y){return pad.t+ph-(y-vyMin)/vyRange*ph;}
+  _sx=sx; _sy=sy;
+
+  // Grid
+  ctx2.strokeStyle="#f0f0f5"; ctx2.lineWidth=1;
+  var yStep=niceStep(vyRange/5);
+  for(var yg=Math.ceil(vyMin/yStep)*yStep;yg<=vyMax+0.001;yg+=yStep){
+    ctx2.beginPath();ctx2.moveTo(pad.l,sy(yg));ctx2.lineTo(W-pad.r,sy(yg));ctx2.stroke();
+  }
+  var xStep=niceStep(vxRange/5);
+  for(var xg=Math.ceil(vxMin/xStep)*xStep;xg<=vxMax+0.001;xg+=xStep){
+    ctx2.beginPath();ctx2.moveTo(sx(xg),pad.t);ctx2.lineTo(sx(xg),H-pad.b);ctx2.stroke();
+  }
+
+  // Axes
+  ctx2.strokeStyle="#bbb"; ctx2.lineWidth=1.2;
+  if(vyMin<=0&&vyMax>=0){ctx2.beginPath();ctx2.moveTo(pad.l,sy(0));ctx2.lineTo(W-pad.r,sy(0));ctx2.stroke();}
+  if(vxMin<=0&&vxMax>=0){ctx2.beginPath();ctx2.moveTo(sx(0),pad.t);ctx2.lineTo(sx(0),H-pad.b);ctx2.stroke();}
+
+  // Tick labels
+  ctx2.fillStyle="#888"; ctx2.font="11px system-ui,sans-serif";
+  ctx2.textAlign="center";
+  for(var xg=Math.ceil(vxMin/xStep)*xStep;xg<=vxMax+0.001;xg+=xStep)
+    ctx2.fillText(+(xg.toFixed(2)),sx(xg),H-pad.b+13);
+  ctx2.textAlign="right";
+  for(var yg=Math.ceil(vyMin/yStep)*yStep;yg<=vyMax+0.001;yg+=yStep)
+    ctx2.fillText(+(yg.toFixed(2)),pad.l-5,sy(yg)+4);
+
+  // ── Shaded region — STRICTLY clipped to [a, b] ──
+  ctx2.save();
+  // Clip drawing to the integration region [a,b] horizontally
+  ctx2.beginPath();
+  ctx2.rect(sx(a), pad.t, sx(b)-sx(a), ph);
+  ctx2.clip();
+
+  // Determine the "base" line for shading (bottom of the region)
+  var shadingAxisY = (ui.axis==="cust_h") ? k : 0;
+
+  if((ui.method==="washer"||ui.method==="shell") && fnParsed.length>1 && fnParsed[1]){
+    // Between f1 and f2: shade the region between the two curves
+    // Upper curve = max(f1,f2), lower curve = min(f1,f2)
+    ctx2.beginPath();
+    // Forward along upper curve
+    var firstUpper=true;
+    for(var i=0;i<=N;i++){
+      var xi=a+i*dx;
+      try{
+        var v1=fnParsed[0](xi), v2=fnParsed[1](xi);
+        var yu=Math.max(v1,v2);
+        if(!isFinite(yu)){firstUpper=true;continue;}
+        if(firstUpper){ctx2.moveTo(sx(xi),sy(yu));firstUpper=false;}
+        else ctx2.lineTo(sx(xi),sy(yu));
+      }catch(e){}
+    }
+    // Backward along lower curve
+    for(var i=N;i>=0;i--){
+      var xi=a+i*dx;
+      try{
+        var v1=fnParsed[0](xi), v2=fnParsed[1](xi);
+        var yl=Math.min(v1,v2);
+        if(!isFinite(yl)) continue;
+        ctx2.lineTo(sx(xi),sy(yl));
+      }catch(e){}
+    }
+    ctx2.closePath();
+    ctx2.fillStyle=FN_FILLS[0]; ctx2.fill();
+
+    // Shade extra functions individually against axis
+    for(var fi=2;fi<fnParsed.length;fi++){
+      if(!fnParsed[fi]) continue;
+      ctx2.beginPath();
+      ctx2.moveTo(sx(a),sy(shadingAxisY));
+      for(var i=0;i<=N;i++){
+        var xi=a+i*dx;
+        try{var y=fnParsed[fi](xi);ctx2.lineTo(sx(xi),sy(y));}catch(e){}
+      }
+      ctx2.lineTo(sx(b),sy(shadingAxisY));
+      ctx2.closePath();
+      ctx2.fillStyle=FN_FILLS[fi%FN_FILLS.length]; ctx2.fill();
+    }
+  } else {
+    // Disk or single-function shell: shade between axis and f(x)
+    fnParsed.forEach(function(fn,fi){
+      if(!fn) return;
+      ctx2.beginPath();
+      ctx2.moveTo(sx(a),sy(shadingAxisY));
+      for(var i=0;i<=N;i++){
+        var xi=a+i*dx;
+        try{var y=fn(xi);ctx2.lineTo(sx(xi),sy(y));}catch(e){}
+      }
+      ctx2.lineTo(sx(b),sy(shadingAxisY));
+      ctx2.closePath();
+      ctx2.fillStyle=FN_FILLS[fi%FN_FILLS.length]; ctx2.fill();
+    });
+  }
+  ctx2.restore();
+
+  /* ── Representative rectangle ──────────────────────
+     Rules:
+       Horizontal axis → VERTICAL strip → TOP − BOTTOM
+         Disk:   top = f(x),           bottom = axis
+         Washer: top = upper_fn(x),    bottom = lower_fn(x)  [always |top−bottom|]
+         Shell:  top = f(x),           bottom = axis; radius = |x − axisX|
+       Vertical axis → HORIZONTAL strip → RIGHT − LEFT
+         Disk:   right = f(y),         left  = axis
+         Washer: right = farther fn,   left  = closer fn
+         Shell:  right = f(y),         left  = axis; radius = |y − axisY|
+  ──────────────────────────────────────────────────── */
+  var rx = (rectX!==undefined) ? rectX : (a+b)/2;
+  rx = Math.max(a+0.001*(b-a), Math.min(b-0.001*(b-a), rx));
+  var rectThick = Math.max((sx(b)-sx(a))*0.045, 6); // px width of strip
+
+  var axisIsVertical = (ui.axis==="yaxis" || ui.axis==="cust_v");
+
+  // Strip orientation:
+  //   Disk/Washer + vertical axis   → horizontal strip (integrate dy)
+  //   Disk/Washer + horizontal axis → vertical strip   (integrate dx)
+  //   Shell + vertical axis         → vertical strip   (radius=x, height=f(x))
+  //   Shell + horizontal axis       → horizontal strip (radius=y, width=f(y))
+  var useHorizontalStrip = (ui.method !== "shell") ? axisIsVertical : !axisIsVertical;
+  var isVerticalAxis = useHorizontalStrip; // keep variable name for branch logic
+
+  function arrowHead2(x,y,dX,dY){
+    // dX,dY: direction the tip points
+    var px=-dY,py=dX; // perpendicular
+    ctx2.beginPath();
+    ctx2.moveTo(x,y);
+    ctx2.lineTo(x-dX*7+px*4, y-dY*7+py*4);
+    ctx2.lineTo(x-dX*7-px*4, y-dY*7-py*4);
+    ctx2.closePath();
+    ctx2.fillStyle="#ea580c"; ctx2.fill();
+  }
+
+  try{
+    ctx2.save();
+    ctx2.fillStyle="rgba(234,88,12,0.22)";
+    ctx2.strokeStyle="#ea580c";
+    ctx2.lineWidth=1.8;
+
+    if(!isVerticalAxis){
+      /* ── VERTICAL STRIP: disk/washer horiz OR shell vert ──────────────
+         Parameter: x = rx (slider value)
+         Evaluate f and g directly at x=rx (no inversion needed)
+      ──────────────────────────────────────────────────────────────── */
+      var axisY = (ui.axis==="cust_h") ? k : 0;
+      var axisXforShell = (ui.axis==="cust_v") ? k : 0;
+
+      var fv1 = null, fv2 = null;
+      try{ var _v1=fnParsed[0]?fnParsed[0](rx):null; fv1=isFinite(_v1)?_v1:null; }catch(e){}
+      try{ var _v2=(fnParsed.length>1&&fnParsed[1])?fnParsed[1](rx):null; fv2=isFinite(_v2)?_v2:null; }catch(e){}
+      if(fv1===null) fv1=0; // safe fallback
+
+      var topY, botY, dimLabel, posLabel;
+
+      if(ui.method==="disk"){
+        // TOP = f(x), BOTTOM = axisY
+        // R = |f(x) − axisY|  (outer radius from axis to curve)
+        topY = (fv1!==null) ? fv1 : axisY;
+        botY = axisY;
+        var R_disk = Math.abs(topY - botY);
+        dimLabel = "R = "+R_disk.toFixed(5);
+        posLabel = "x = "+rx.toFixed(4);
+
+      } else if(ui.method==="washer"){
+        // TOP = whichever curve is farther from axis (larger |y - axisY|)
+        // BOTTOM = whichever is closer
+        // R = |top - axisY|, r = |bottom - axisY|, h = top - bottom
+        var v1 = (fv1!==null)?fv1:axisY, v2 = (fv2!==null)?fv2:axisY;
+        topY = Math.max(v1, v2);
+        botY = Math.min(v1, v2);
+        var R_w = Math.abs(topY - axisY);
+        var r_w = Math.abs(botY - axisY);
+        var h_w = topY - botY;
+        dimLabel = "R="+R_w.toFixed(4)+" r="+r_w.toFixed(4)+" h="+h_w.toFixed(4);
+        posLabel = "x = "+rx.toFixed(4);
+
+      } else {
+        // Shell around vertical axis:
+        // Strip height h = top - bottom (f(x) to g(x), or f(x) to 0)
+        // Radius r = |x - axisX|
+        var v1s = (fv1!==null)?fv1:0, v2s = (fv2!==null)?fv2:null;
+        topY = (v2s!==null) ? Math.max(v1s,v2s) : v1s;
+        botY = (v2s!==null) ? Math.min(v1s,v2s) : 0;
+        var h_s = topY - botY;
+        var r_s = Math.abs(rx - axisXforShell);
+        dimLabel = "h="+h_s.toFixed(4)+" r=|x−axis|="+r_s.toFixed(4);
+        posLabel = "x = "+rx.toFixed(4);
+      }
+
+      // Draw vertical strip
+      var screenTop = sy(Math.max(topY, botY));
+      var screenBot = sy(Math.min(topY, botY));
+      var sxL = sx(rx) - rectThick/2, sxR = sx(rx) + rectThick/2;
+      var stripH = Math.max(screenBot - screenTop, 3);
+
+      if(stripH < 1) stripH = 1; // minimum 1px
+      ctx2.fillRect(sxL, screenTop, rectThick, stripH);
+      ctx2.strokeRect(sxL, screenTop, rectThick, stripH);
+
+      // Double-headed vertical arrow on right side
+      var arrX = sxR + 9;
+      ctx2.strokeStyle="#ea580c"; ctx2.lineWidth=1.5;
+      ctx2.beginPath(); ctx2.moveTo(arrX, screenTop); ctx2.lineTo(arrX, screenBot); ctx2.stroke();
+      arrowHead2(arrX, screenTop, 0, -1);
+      arrowHead2(arrX, screenBot, 0,  1);
+
+      // x-position label at bottom
+      ctx2.fillStyle="#ea580c";
+      ctx2.font="bold 11px system-ui"; ctx2.textAlign="center";
+      ctx2.fillText(posLabel, sx(rx), H-pad.b+30);
+      // Dimension label beside arrow
+      ctx2.font="10px system-ui"; ctx2.textAlign="left";
+      ctx2.fillText(dimLabel, arrX+6, (screenTop+screenBot)/2+4);
+
+      // Dashed guide from axis to bottom of strip
+      ctx2.setLineDash([3,3]); ctx2.strokeStyle="#ea580c"; ctx2.lineWidth=1;
+      ctx2.beginPath();
+      ctx2.moveTo(sx(rx), sy(axisY));
+      ctx2.lineTo(sx(rx), screenTop);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+
+    } else {
+      /* ── HORIZONTAL STRIP: disk/washer vert OR shell horiz ────────────
+         Parameter: y = ry (slider value)
+         MUST use inverse: find x where f(x)=ry and g(x)=ry via bisection
+         Do NOT call f(ry) — that treats y as x (wrong)
+      ──────────────────────────────────────────────────────────────── */
+      var axisX = (ui.axis==="cust_v") ? k : 0;
+      var axisY2 = (ui.axis==="cust_h") ? k : 0;
+      var ry = rx;
+
+      // Find inverse values: x such that fn(x) = ry
+      var xInv0 = invertFnAt(fnParsed[0], ry);
+      var xInv1 = (fnParsed.length>1 && fnParsed[1]) ? invertFnAt(fnParsed[1], ry) : null;
+
+      var rightX, leftX, dimLabel2, posLabel2;
+      var R2, r2;
+
+      if(ui.method==="disk"){
+        // RIGHT = f⁻¹(ry), LEFT = axisX
+        // R = |f⁻¹(ry) − axisX|
+        var xf = (xInv0!==null) ? xInv0 : 0;
+        rightX = Math.max(xf, axisX);
+        leftX  = Math.min(xf, axisX);
+        R2 = Math.abs(xf - axisX);
+        dimLabel2 = "R = |f\u207B\u00B9(y)\u2212axis| = "+R2.toFixed(5);
+        posLabel2 = "y = "+ry.toFixed(4);
+
+      } else if(ui.method==="washer"){
+        // RIGHT = farther x from axis, LEFT = closer x from axis
+        // R = |RIGHT − axisX| (outer), r = |LEFT − axisX| (inner)
+        // Width = RIGHT − LEFT
+        var xf2 = (xInv0!==null) ? xInv0 : axisX;
+        var xg2 = (xInv1!==null) ? xInv1 : axisX;
+        var df = Math.abs(xf2 - axisX), dg = Math.abs(xg2 - axisX);
+        if(df >= dg){
+          rightX=xf2; leftX=xg2; R2=df; r2=dg;
+        } else {
+          rightX=xg2; leftX=xf2; R2=dg; r2=df;
+        }
+        // Ensure right is actually to the right on screen
+        if(rightX < leftX){ var tmp=rightX; rightX=leftX; leftX=tmp; }
+        var w2 = rightX - leftX;
+        dimLabel2 = "R="+R2.toFixed(4)+" r="+(r2||0).toFixed(4)+" w="+w2.toFixed(4);
+        posLabel2 = "y = "+ry.toFixed(4);
+
+      } else {
+        // Shell around horizontal axis:
+        // RIGHT = f⁻¹(ry), LEFT = g⁻¹(ry) (or 0 if single fn)
+        // Width = RIGHT − LEFT
+        // Radius = |ry − axisY|
+        var xfS = (xInv0!==null) ? xInv0 : 0;
+        var xgS = (xInv1!==null) ? xInv1 : 0;
+        rightX = Math.max(xfS, xgS);
+        leftX  = Math.min(xfS, xgS);
+        if(fnParsed.length===1) leftX = 0;
+        var wS = rightX - leftX;
+        var rS = Math.abs(ry - axisY2);
+        dimLabel2 = "w=f\u207B\u00B9\u2212g\u207B\u00B9="+wS.toFixed(4)+" r="+rS.toFixed(4);
+        posLabel2 = "y = "+ry.toFixed(4);
+        R2 = rS; // for guide label
+      }
+
+      // Draw horizontal strip
+      var sLeft  = sx(Math.min(leftX, rightX));
+      var sRight = sx(Math.max(leftX, rightX));
+      var syT = sy(ry) - rectThick/2, syB = sy(ry) + rectThick/2;
+      var stripW = Math.max(sRight - sLeft, 3);
+
+      if(stripW < 1) stripW = 2; // minimum 2px
+      ctx2.fillRect(sLeft, syT, stripW, rectThick);
+      ctx2.strokeRect(sLeft, syT, stripW, rectThick);
+
+      // Double-headed horizontal arrow ABOVE strip
+      var arrY2 = syT - 10;
+      ctx2.strokeStyle="#ea580c"; ctx2.lineWidth=1.5;
+      ctx2.beginPath(); ctx2.moveTo(sLeft, arrY2); ctx2.lineTo(sRight, arrY2); ctx2.stroke();
+      arrowHead2(sLeft,  arrY2, -1, 0);
+      arrowHead2(sRight, arrY2,  1, 0);
+
+      // Labels
+      ctx2.fillStyle="#ea580c";
+      ctx2.font="bold 11px system-ui"; ctx2.textAlign="left";
+      ctx2.fillText(posLabel2, sRight+8, sy(ry)+4);
+      ctx2.font="10px system-ui"; ctx2.textAlign="center";
+      ctx2.fillText(dimLabel2, (sLeft+sRight)/2, arrY2-7);
+
+      // Dashed radius arm from axis to left edge of strip
+      var guideAxisX = (ui.axis==="cust_v") ? k : 0;
+      ctx2.setLineDash([3,3]); ctx2.strokeStyle="#ea580c"; ctx2.lineWidth=1;
+      ctx2.beginPath();
+      ctx2.moveTo(sx(guideAxisX), sy(ry));
+      ctx2.lineTo(sLeft, sy(ry));
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      // Radius tick on axis
+      ctx2.beginPath();
+      ctx2.moveTo(sx(guideAxisX)-4, sy(ry));
+      ctx2.lineTo(sx(guideAxisX)+4, sy(ry));
+      ctx2.stroke();
+      // r label
+      ctx2.fillStyle="#ea580c"; ctx2.font="10px system-ui"; ctx2.textAlign="right";
+      if(ui.method!=="disk") ctx2.fillText("r="+(R2||0).toFixed(3), sx(guideAxisX)-6, sy(ry)-4);
+    }
+
+    ctx2.restore();
+  }catch(e){ console.warn("rect:",e); }
+
+  // Axis of revolution (dashed red)
+  ctx2.save();
+  ctx2.strokeStyle="#b91c1c"; ctx2.lineWidth=2; ctx2.setLineDash([7,4]);
+  if(ui.axis==="xaxis"){
+    ctx2.beginPath();ctx2.moveTo(pad.l,sy(0));ctx2.lineTo(W-pad.r,sy(0));ctx2.stroke();
+    ctx2.setLineDash([]);ctx2.fillStyle="#b91c1c";ctx2.font="bold 11px system-ui";ctx2.textAlign="left";
+    ctx2.fillText("y = 0",W-pad.r-36,sy(0)-5);
+  }else if(ui.axis==="yaxis"&&a-xPad<=0&&b+xPad>=0){
+    ctx2.beginPath();ctx2.moveTo(sx(0),pad.t);ctx2.lineTo(sx(0),H-pad.b);ctx2.stroke();
+    ctx2.setLineDash([]);ctx2.fillStyle="#b91c1c";ctx2.font="bold 11px system-ui";ctx2.textAlign="left";
+    ctx2.fillText("x = 0",sx(0)+4,pad.t+14);
+  }else if(ui.axis==="cust_h"){
+    ctx2.beginPath();ctx2.moveTo(pad.l,sy(k));ctx2.lineTo(W-pad.r,sy(k));ctx2.stroke();
+    ctx2.setLineDash([]);ctx2.fillStyle="#b91c1c";ctx2.font="bold 11px system-ui";ctx2.textAlign="left";
+    ctx2.fillText("y = "+k,W-pad.r-36,sy(k)-5);
+  }else if(ui.axis==="cust_v"){
+    // Draw x=k line if it's within the current viewport
+    if(k>=vxMin&&k<=vxMax){
+      ctx2.beginPath();ctx2.moveTo(sx(k),pad.t);ctx2.lineTo(sx(k),H-pad.b);ctx2.stroke();
+      ctx2.setLineDash([]);ctx2.fillStyle="#b91c1c";ctx2.font="bold 11px system-ui";
+      ctx2.textAlign=k<(vxMin+vxMax)/2?"left":"right";
+      ctx2.fillText("x = "+k, k<(vxMin+vxMax)/2 ? sx(k)+4 : sx(k)-4, pad.t+14);
+    }
+  }
+  ctx2.restore();
+
+  // Draw all functions
+  fnParsed.forEach(function(fn,fi){
+    if(!fn) return;
+    ctx2.strokeStyle=FN_COLORS[fi%FN_COLORS.length]; ctx2.lineWidth=2.5; ctx2.setLineDash([]);
+    ctx2.beginPath(); var first=true;
+    for(var i=0;i<=N;i++){
+      var xi=a+i*dx;
+      try{var y=fn(xi);if(!isFinite(y)){first=true;continue;}
+        if(first){ctx2.moveTo(sx(xi),sy(y));first=false;}else ctx2.lineTo(sx(xi),sy(y));
+      }catch(e){first=true;}
+    }
+    ctx2.stroke();
+  });
+
+  // ── Intercepts & intersections ──────────────────────
+  // Bisection root finder: find x in [lo,hi] where fn(x)~0
+  function bisect(fn,lo,hi,tol,maxIt){
+    tol=tol||1e-7; maxIt=maxIt||60;
+    var flo=fn(lo),fhi=fn(hi);
+    if(flo*fhi>0) return null;
+    for(var i=0;i<maxIt;i++){
+      var mid2=(lo+hi)/2, fm=fn(mid2);
+      if(Math.abs(fm)<tol||Math.abs(hi-lo)<tol) return mid2;
+      if(flo*fm<=0){hi=mid2;fhi=fm;}else{lo=mid2;flo=fm;}
+    }
+    return (lo+hi)/2;
+  }
+
+  // Scan for sign changes of fn over [xMin,xMax] with nScan steps
+  function findRoots(fn,xMin,xMax,nScan){
+    nScan=nScan||400;
+    var roots=[], h2=(xMax-xMin)/nScan, prev=null, prevX=xMin;
+    for(var i=0;i<=nScan;i++){
+      var xi2=xMin+i*h2;
+      var vi; try{vi=fn(xi2);}catch(e){prev=null;continue;}
+      if(!isFinite(vi)){prev=null;continue;}
+      if(prev!==null && prev*vi<0){
+        var r=bisect(fn,prevX,xi2);
+        if(r!==null&&roots.every(function(rr){return Math.abs(rr-r)>1e-5;})) roots.push(r);
+      }
+      prev=vi; prevX=xi2;
+    }
+    return roots;
+  }
+
+  // Extended domain for x-axis intercepts (beyond [a,b] slightly for context)
+  var xScanMin=Math.min(a-xPad*0.9, ui.axis==="cust_v"?k-0.1:a-xPad*0.9);
+  var xScanMax=Math.max(b+xPad*0.9, ui.axis==="cust_h"?0:b+xPad*0.9);
+
+  var interceptPts=[]; // {x,y,label,color,onCurve}
+
+  // 1 & 2. x-intercepts and y-intercepts for ALL functions
+  fnParsed.forEach(function(fn,fi){
+    if(!fn) return;
+    var col=FN_COLORS[fi%FN_COLORS.length];
+    // x-intercepts (f=0)
+    var zeros=findRoots(function(x){try{return fn(x);}catch(e){return NaN;}},xScanMin,xScanMax);
+    zeros.forEach(function(x){
+      interceptPts.push({x:x,y:0,lbl:"("+x.toFixed(3)+", 0)",col:col,marker:"circle"});
+    });
+    // y-intercept (x=0)
+    if(xScanMin<=0&&xScanMax>=0){
+      try{var yv=fn(0);if(isFinite(yv)) interceptPts.push({x:0,y:yv,lbl:"(0, "+yv.toFixed(3)+")",col:col,marker:"circle"});}catch(e){}
+    }
+  });
+
+  // 3. All pairwise intersections between functions
+  for(var fi=0;fi<fnParsed.length;fi++){
+    for(var fj=fi+1;fj<fnParsed.length;fj++){
+      var fa=fnParsed[fi], fb=fnParsed[fj];
+      if(!fa||!fb) continue;
+      var ijRoots=findRoots(function(x){try{return fa(x)-fb(x);}catch(e){return NaN;}},xScanMin,xScanMax);
+      ijRoots.forEach(function(x){
+        try{
+          var y=fa(x);
+          if(isFinite(y)) interceptPts.push({x:x,y:y,lbl:"("+x.toFixed(3)+", "+y.toFixed(3)+")",col:"#7c3aed",marker:"diamond"});
+        }catch(e){}
+      });
+    }
+  }
+
+  // 5. f(x) meets axis of revolution (y = k for cust_h, x=k for cust_v already handled above)
+  if(ui.axis==="cust_h"){
+    var fkRoots=findRoots(function(x){try{return f1(x)-k;}catch(e){return NaN;}},xScanMin,xScanMax);
+    fkRoots.forEach(function(x){
+      interceptPts.push({x:x,y:k,lbl:"("+x.toFixed(3)+", "+k+")",col:"#b91c1c",marker:"circle"});
+    });
+  }
+  if(ui.axis==="cust_v"){
+    try{var fkv=f1(k);if(isFinite(fkv)) interceptPts.push({x:k,y:fkv,lbl:"("+k+", "+fkv.toFixed(3)+")",col:"#b91c1c",marker:"circle"});}catch(e){}
+    if(f2){try{var gkv=f2(k);if(isFinite(gkv)) interceptPts.push({x:k,y:gkv,lbl:"("+k+", "+gkv.toFixed(3)+")",col:"#b91c1c",marker:"circle"});}catch(e){}}
+  }
+
+  // 6. Limit endpoint dots on ALL curves
+  [[a,"a"],[b,"b"]].forEach(function(p){
+    fnParsed.forEach(function(fn,fi){
+      if(!fn) return;
+      try{
+        var yv=fn(p[0]);
+        if(isFinite(yv)) interceptPts.push({x:p[0],y:yv,lbl:p[1]+"=("+p[0]+", "+yv.toFixed(3)+")",col:FN_COLORS[fi%FN_COLORS.length],marker:"square"});
+      }catch(e){}
+    });
+  });
+
+  // De-duplicate points within tolerance
+  var unique=[];
+  interceptPts.forEach(function(p){
+    if(unique.every(function(q){return Math.abs(q.x-p.x)>1e-4||Math.abs(q.y-p.y)>1e-4;}))
+      unique.push(p);
+  });
+
+  // Draw intercept points
+  var labelOffsets={}; // track label y positions to avoid overlap
+  unique.forEach(function(p){
+    var px=sx(p.x), py=sy(p.y);
+    // Skip if outside visible canvas area
+    if(px<pad.l-10||px>W-pad.r+10||py<pad.t-10||py>H-pad.b+10) return;
+
+    ctx2.save();
+    if(p.marker==="diamond"){
+      ctx2.beginPath();
+      ctx2.moveTo(px,py-7); ctx2.lineTo(px+6,py); ctx2.lineTo(px,py+7); ctx2.lineTo(px-6,py);
+      ctx2.closePath();
+      ctx2.fillStyle=p.col; ctx2.fill();
+      ctx2.strokeStyle="#fff"; ctx2.lineWidth=1.5; ctx2.stroke();
+    } else if(p.marker==="square"){
+      ctx2.fillStyle=p.col;
+      ctx2.fillRect(px-5,py-5,10,10);
+      ctx2.strokeStyle="#fff"; ctx2.lineWidth=1.5; ctx2.strokeRect(px-5,py-5,10,10);
+    } else {
+      ctx2.beginPath(); ctx2.arc(px,py,5.5,0,2*Math.PI);
+      ctx2.fillStyle=p.col; ctx2.fill();
+      ctx2.strokeStyle="#fff"; ctx2.lineWidth=1.5; ctx2.stroke();
+    }
+
+    // Label with smart offset to reduce overlap
+    ctx2.font="11px system-ui"; ctx2.fillStyle=p.col;
+    var lkey=Math.round(px/20);
+    var lyOff=(labelOffsets[lkey]||0);
+    labelOffsets[lkey]=lyOff-16;
+    var labelY=py-10+lyOff;
+    ctx2.textAlign=px>W*0.75?"right":px<W*0.25?"left":"center";
+    ctx2.fillText(p.lbl, px+(ctx2.textAlign==="right"?-6:ctx2.textAlign==="left"?6:0), labelY);
+    ctx2.restore();
+  });
+
+  // Limit a, b markers on x-axis (always shown)
+  [[a,"a"],[b,"b"]].forEach(function(p){
+    ctx2.beginPath(); ctx2.arc(sx(p[0]),sy(0),4,0,2*Math.PI);
+    ctx2.fillStyle="#3a3296"; ctx2.fill();
+    ctx2.strokeStyle="#fff"; ctx2.lineWidth=1.2; ctx2.stroke();
+    ctx2.fillStyle="#3a3296"; ctx2.font="bold 11.5px system-ui";
+    ctx2.textAlign="center";
+    ctx2.fillText(p[1]+"="+p[0],sx(p[0]),H-pad.b+30);
+  });
+
+  // Legend — all functions
+  var fnLabels=["f","g","h","p","q","r","s"];
+  var leg=ui.fns.map(function(e,i){return {c:FN_COLORS[i%FN_COLORS.length],lbl:fnLabels[i]+"(x) = "+e,dash:false};});
+  leg.push({c:"#b91c1c",lbl:"Axis of revolution",dash:true});
+  leg.push({c:"#ea580c",lbl:"Representative rectangle",dash:false,rect:true});
+  ctx2.font="11.5px system-ui"; ctx2.textAlign="left";
+  var lx=pad.l+8, ly=pad.t+14;
+  leg.forEach(function(item){
+    ctx2.save();
+    if(item.rect){
+      ctx2.fillStyle="rgba(234,88,12,0.28)";
+      ctx2.fillRect(lx,ly-8,18,10);
+      ctx2.strokeStyle=item.c; ctx2.lineWidth=1.5;
+      ctx2.strokeRect(lx,ly-8,18,10);
+    } else {
+      if(item.dash) ctx2.setLineDash([5,3]);
+      ctx2.strokeStyle=item.c; ctx2.lineWidth=2.5;
+      ctx2.beginPath(); ctx2.moveTo(lx,ly-3); ctx2.lineTo(lx+18,ly-3); ctx2.stroke();
+    }
+    ctx2.restore();
+    ctx2.fillStyle="#333"; ctx2.fillText(item.lbl,lx+22,ly+4);
+    ly+=18;
+  });
+}
+
+/* ══════════════════════════════════════
+   SLIDER
+══════════════════════════════════════ */
+var _lastUI = null;
+
+function initSlider(ui){
+  var sl=document.getElementById("rectSlider");
+  sl.min=ui.a; sl.max=ui.b;
+  sl.step=(ui.b-ui.a)/500;
+  var mid=(ui.a+ui.b)/2;
+  sl.value=mid;
+  var lbl=sliderParamLabel(ui);
+  document.getElementById("sliderVal").textContent=lbl+" = "+mid.toFixed(3);
+  // Update slider bar label
+  var lblEl=document.getElementById("sliderLbl");
+  if(lblEl) lblEl.textContent="Representative rectangle at "+lbl+" =";
+}
+
+function sliderParamLabel(ui){
+  if(!ui) return "x";
+  // Horizontal strip → parameter is y; vertical strip → parameter is x
+  var axisIsVert=(ui.axis==="yaxis"||ui.axis==="cust_v");
+  var useHoriz=(ui.method!=="shell")?axisIsVert:!axisIsVert;
+  return useHoriz?"y":"x";
+}
+window.onSlider=function(){
+  var sl=document.getElementById("rectSlider");
+  var x=parseFloat(sl.value);
+  var lbl=sliderParamLabel(_lastUI);
+  document.getElementById("sliderVal").textContent=lbl+" = "+x.toFixed(3);
+  if(_lastUI && validate(_lastUI)) draw2d(_lastUI, x);
+};
+
+/* ══════════════════════════════════════
+   3D WEBGL RENDERER — improved contrast
+══════════════════════════════════════ */
+var cvs3=document.getElementById("c3d");
+var wrap3=document.getElementById("wrap3d");
+var gl;
+var cam={theta:0.55,phi:1.1,dist:5,cx:0,cy:0,cz:0};
+var drag={active:false,x:0,y:0};
+var mesh={buf:null,n:0}, meshIn={buf:null,n:0};
+var _extraMeshes=[];
+var axBuf=null, axN=0; // legacy
+var _axesData=[], _axesBufs=[]; // XYZ colored axes
+
+function mat4(){return new Float32Array(16);}
+function mul44(a,b){
+  var o=mat4();
+  for(var r=0;r<4;r++) for(var c=0;c<4;c++){
+    var s=0; for(var k2=0;k2<4;k2++) s+=a[r+k2*4]*b[k2+c*4]; o[r+c*4]=s;
+  }
+  return o;
+}
+function perspective(fov,asp,near,far){
+  var f=1/Math.tan(fov/2),m=mat4();
+  m[0]=f/asp;m[5]=f;m[10]=(far+near)/(near-far);m[11]=-1;m[14]=2*far*near/(near-far);
+  return m;
+}
+function lookAt(ex,ey,ez,cx,cy,cz){
+  var fx=cx-ex,fy=cy-ey,fz=cz-ez,fl=Math.sqrt(fx*fx+fy*fy+fz*fz);
+  fx/=fl;fy/=fl;fz/=fl;
+  var ux=0,uy=1,uz=0;
+  var rx=fy*uz-fz*uy,ry=fz*ux-fx*uz,rz=fx*uy-fy*ux;
+  var rl=Math.sqrt(rx*rx+ry*ry+rz*rz)||1;rx/=rl;ry/=rl;rz/=rl;
+  var upx=ry*fz-rz*fy,upy=rz*fx-rx*fz,upz=rx*fy-ry*fx;
+  var m=mat4();
+  m[0]=rx;m[4]=ry;m[8]=rz;   m[12]=-(rx*ex+ry*ey+rz*ez);
+  m[1]=upx;m[5]=upy;m[9]=upz;m[13]=-(upx*ex+upy*ey+upz*ez);
+  m[2]=-fx;m[6]=-fy;m[10]=-fz;m[14]=(fx*ex+fy*ey+fz*ez);
+  m[15]=1; return m;
+}
+
+function initGL(){
+  cvs3.width=wrap3.clientWidth||500;
+  cvs3.height=wrap3.clientHeight||380;
+  gl=cvs3.getContext("webgl")||cvs3.getContext("experimental-webgl");
+  if(!gl) return false;
+
+  /* Solid shader — warm deep purple on teal gradient background */
+  var VS=`attribute vec3 aP;attribute vec3 aN;
+    uniform mat4 uMVP;uniform mat4 uMV;
+    varying vec3 vN;varying vec3 vE;varying float vZ;
+    void main(){
+      vec4 wp=uMV*vec4(aP,1.);
+      gl_Position=uMVP*vec4(aP,1.);
+      vN=normalize(mat3(uMV)*aN);
+      vE=-wp.xyz;
+      vZ=aP.z;
+    }`;
+  var FS=`precision mediump float;
+    varying vec3 vN;varying vec3 vE;varying float vZ;
+    uniform vec3 uCol;uniform float uAlp;
+    uniform float uZMin;uniform float uZMax;
+    void main(){
+      vec3 N=normalize(vN);vec3 E=normalize(vE);
+      vec3 L1=normalize(vec3(1.2,2.0,1.5));
+      vec3 L2=normalize(vec3(-1.0,-0.5,1.0));
+      float d1=max(dot(N,L1),0.);
+      float d2=max(dot(N,L2),0.)*0.4;
+      float sp=pow(max(dot(reflect(-L1,N),E),0.),32.)*0.55;
+      float rim=pow(1.-max(dot(N,E),0.),2.)*0.25;
+      vec3 col=uCol*(0.15+d1*0.85+d2)+vec3(sp*0.6)+uCol*rim*0.5;
+      gl_FragColor=vec4(col,uAlp);
+    }`;
+
+  function mkS(t,src){var s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);return s;}
+  var prog=gl.createProgram();
+  gl.attachShader(prog,mkS(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,mkS(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){console.warn("GL link fail");return false;}
+  gl.useProgram(prog);
+  gl._aP=gl.getAttribLocation(prog,"aP");
+  gl._aN=gl.getAttribLocation(prog,"aN");
+  gl._uMVP=gl.getUniformLocation(prog,"uMVP");
+  gl._uMV=gl.getUniformLocation(prog,"uMV");
+  gl._uCol=gl.getUniformLocation(prog,"uCol");
+  gl._uAlp=gl.getUniformLocation(prog,"uAlp");
+  gl._uZMin=gl.getUniformLocation(prog,"uZMin");
+  gl._uZMax=gl.getUniformLocation(prog,"uZMax");
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+
+  // gradient-like background: draw full-screen quad in two triangles
+  // instead: set clearColor to a nice deep navy
+  gl.clearColor(1.0,1.0,1.0,1.0); // white background
+  return true;
+}
+
+function render3d(zMin,zMax){
+  if(!gl)return;
+  var W=cvs3.width,H=cvs3.height;
+  gl.viewport(0,0,W,H);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+
+  var ex=cam.dist*Math.sin(cam.phi)*Math.sin(cam.theta);
+  var ey=cam.dist*Math.cos(cam.phi);
+  var ez=cam.dist*Math.sin(cam.phi)*Math.cos(cam.theta);
+  var MV=lookAt(ex+cam.cx,ey+cam.cy,ez+cam.cz,cam.cx,cam.cy,cam.cz);
+  var P=perspective(0.72,W/H,0.05,60);
+  var MVP=mul44(P,MV);
+  _lastMVP=MVP;
+  gl.uniformMatrix4fv(gl._uMVP,false,MVP);
+  gl.uniformMatrix4fv(gl._uMV,false,MV);
+  gl.uniform1f(gl._uZMin,zMin||0);
+  gl.uniform1f(gl._uZMax,zMax||1);
+
+  function drawM(m,col,alp){
+    if(!m.buf||!m.n)return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.buf);
+    gl.enableVertexAttribArray(gl._aP);
+    gl.enableVertexAttribArray(gl._aN);
+    gl.vertexAttribPointer(gl._aP,3,gl.FLOAT,false,24,0);
+    gl.vertexAttribPointer(gl._aN,3,gl.FLOAT,false,24,12);
+    gl.uniform3fv(gl._uCol,col);
+    gl.uniform1f(gl._uAlp,alp);
+    gl.drawArrays(gl.TRIANGLES,0,m.n);
+  }
+
+  // Draw colored XYZ axes
+  _axesBufs.forEach(function(ab){
+    if(!ab.buf)return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,ab.buf);
+    gl.enableVertexAttribArray(gl._aP);
+    gl.enableVertexAttribArray(gl._aN);
+    gl.vertexAttribPointer(gl._aP,3,gl.FLOAT,false,24,0);
+    gl.vertexAttribPointer(gl._aN,3,gl.FLOAT,false,24,12);
+    gl.uniform3fv(gl._uCol,ab.col);
+    gl.uniform1f(gl._uAlp,1.0);
+    gl.drawArrays(gl.TRIANGLES,0,ab.n);
+  });
+
+  // ── Multi-surface rendering ──
+  // Strategy: draw inner (g fn) FIRST fully opaque, then outer (f fn) at 72% opacity.
+  // The semi-transparent outer lets the inner color show through clearly.
+  // depthMask stays true throughout for correct occlusion with axes.
+
+  // Step 1: inner surface (g function) — vivid red-orange, fully opaque
+  if(meshIn.buf){
+    gl.depthMask(true);
+    drawM(meshIn, PALETTE3D[1], 1.0);
+  }
+
+  // Step 2: extra functions (3rd+) — opaque, distinct colors
+  _extraMeshes.forEach(function(m){
+    gl.depthMask(true);
+    drawM(m, m.col, 1.0);
+  });
+
+  // Step 3: outer solid (f function) — semi-transparent blue so inner shows through
+  // depthMask false prevents outer from occluding inner in depth buffer
+  gl.depthMask(false);
+  drawM(mesh, PALETTE3D[0], 0.68);
+  gl.depthMask(true);
+}
+
+// ── Surface of revolution around X-axis ──
+// Used for: Disk/Washer with horizontal axis
+// pt = [x, r·cos(θ), r·sin(θ)]  where r=rFn(x), x position=zFn(x)
+function buildRevSurface(rFn,zFn,tMin,tMax,nT,nA){
+  var verts=[],dT=(tMax-tMin)/nT,dA=2*Math.PI/nA;
+  function pt(t,ang){var r=Math.max(0,rFn(t)),x=zFn(t);return[x, r*Math.cos(ang), r*Math.sin(ang)];}
+  function sub3(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+  function cross3(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+  function norm3(n){var l=Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2])||1;return[n[0]/l,n[1]/l,n[2]/l];}
+  function push(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+  for(var i=0;i<nT;i++){
+    var t0=tMin+i*dT,t1=t0+dT;
+    for(var j=0;j<nA;j++){
+      var a0=j*dA,a1=a0+dA;
+      var p00=pt(t0,a0),p10=pt(t1,a0),p01=pt(t0,a1),p11=pt(t1,a1);
+      var n0=norm3(cross3(sub3(p10,p00),sub3(p01,p00)));
+      var n1=norm3(cross3(sub3(p11,p10),sub3(p01,p10)));
+      push(p00,n0);push(p10,n0);push(p01,n0);
+      push(p10,n1);push(p11,n1);push(p01,n1);
+    }
+  }
+  return verts;
+}
+
+// ── Shell/Disk around VERTICAL axis (y-axis or x=k) ──
+// Parameter: x runs over [xMin, xMax] (the integration variable)
+// Radius: r = |x - axisK|  (distance from the vertical axis)
+// Height: hFn(x) = top of shell at position x
+// botFn(x) = bottom of shell (or 0 if single function)
+// pt = [r·cos(θ),  height,  r·sin(θ)]
+function buildShellSurfaceVerticalX(hFn, botFn, xMin, xMax, nX, nA, axisK){
+  axisK = axisK||0;
+  var verts=[], dX=(xMax-xMin)/nX, dA=2*Math.PI/nA;
+  function push(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+
+  for(var i=0;i<nX;i++){
+    var x0=xMin+i*dX, x1=x0+dX;
+    // radius = distance from axis
+    var r0=Math.abs(x0-axisK), r1=Math.abs(x1-axisK);
+    // height = function value at this x
+    var h0=Math.max(0,hFn(x0)), h1=Math.max(0,hFn(x1));
+    var b0=botFn?Math.max(0,botFn(x0)):0, b1=botFn?Math.max(0,botFn(x1)):0;
+    if(!isFinite(h0)||!isFinite(h1)) continue;
+
+    for(var j=0;j<nA;j++){
+      var a0=j*dA, a1=a0+dA;
+      var c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+
+      // Outer surface at r0 and r1
+      // Top ring
+      var T00=[r0*c0,h0,r0*s0], T01=[r0*c1,h0,r0*s1];
+      var T10=[r1*c0,h1,r1*s0], T11=[r1*c1,h1,r1*s1];
+      // Bottom ring
+      var B00=[r0*c0,b0,r0*s0], B01=[r0*c1,b0,r0*s1];
+      var B10=[r1*c0,b1,r1*s0], B11=[r1*c1,b1,r1*s1];
+
+      // Outer lateral wall (between r0 and r1 bands)
+      var nO0=[c0,0,s0],nO1=[c1,0,s1];
+      push(B00,nO0);push(T00,nO0);push(B01,nO1);
+      push(T00,nO0);push(T01,nO1);push(B01,nO1);
+      // Also close between adjacent x-slices
+      push(B00,nO0);push(B10,nO0);push(T00,nO0);
+      push(B10,nO0);push(T10,nO0);push(T00,nO0);
+
+      // Top cap (connects t0 to t1 ring at this angular slice)
+      var nTop=[0,1,0];
+      push(T00,nTop);push(T10,nTop);push(T01,nTop);
+      push(T10,nTop);push(T11,nTop);push(T01,nTop);
+
+      // Bottom cap
+      var nBot=[0,-1,0];
+      push(B00,nBot);push(B01,nBot);push(B10,nBot);
+      push(B01,nBot);push(B11,nBot);push(B10,nBot);
+    }
+  }
+  return verts;
+}
+
+// Keep old name as alias for backward compat
+function buildShellSurfaceVertical(hFn,botFn,rMin,rMax,nR,nA,axisOffset){
+  return buildShellSurfaceVerticalX(hFn,botFn,rMin,rMax,nR,nA,axisOffset);
+}
+
+// ── Shell method around HORIZONTAL axis (x-axis or y=k) ──
+// Each shell at radius r = y, width w = rightFn(y) - leftFn(y)
+// pt = [z, r·cos(θ), r·sin(θ)]  where z runs along X-axis
+function buildShellSurfaceHorizontal(rightFn, leftFn, rMin, rMax, nR, nA, axisOffset){
+  axisOffset = axisOffset||0;
+  var verts=[], dR=(rMax-rMin)/nR, dA=2*Math.PI/nA;
+  function push(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+  for(var i=0;i<nR;i++){
+    var r0=rMin+i*dR, r1=r0+dR;
+    var rr0=r0+axisOffset, rr1=r1+axisOffset;
+    var right0=rightFn(rr0), left0=leftFn?leftFn(rr0):0;
+    var right1=rightFn(rr1), left1=leftFn?leftFn(rr1):0;
+    var rm=(r0+r1)/2;
+    for(var j=0;j<nA;j++){
+      var a0=j*dA,a1=a0+dA;
+      var cos0=Math.cos(a0),sin0=Math.sin(a0),cos1=Math.cos(a1),sin1=Math.sin(a1);
+      // Outer wall at mid-radius rm
+      var nOut0=[0,cos0,sin0],nOut1=[0,cos1,sin1];
+      // right cap → left cap (along x-axis)
+      var P00=[right0,rm*cos0,rm*sin0], P01=[right0,rm*cos1,rm*sin1];
+      var P10=[right1,rm*cos0,rm*sin1], P11=[right1,rm*cos1,rm*sin1];
+      var Q00=[left0,rm*cos0,rm*sin0],  Q01=[left0,rm*cos1,rm*sin1];
+      var Q10=[left1,rm*cos0,rm*sin0],  Q11=[left1,rm*cos1,rm*sin1];
+      push(Q00,nOut0); push(P00,nOut0); push(Q01,nOut1);
+      push(P00,nOut0); push(P01,nOut1); push(Q01,nOut1);
+      var nR2=[1,0,0],nL=[-1,0,0];
+      push(P00,nR2); push(P10,nR2); push(P01,nR2);
+      push(P10,nR2); push(P11,nR2); push(P01,nR2);
+      push(Q00,nL); push(Q01,nL); push(Q10,nL);
+      push(Q01,nL); push(Q11,nL); push(Q10,nL);
+    }
+  }
+  return verts;
+}
+
+// Build a cylinder tube along arbitrary axis direction
+function buildCylinder(p0,p1,r,nA){
+  nA=nA||10;
+  var verts=[];
+  var ax=p1[0]-p0[0], ay=p1[1]-p0[1], az=p1[2]-p0[2];
+  var len=Math.sqrt(ax*ax+ay*ay+az*az)||1;
+  ax/=len; ay/=len; az/=len;
+  // find perpendicular
+  var ux,uy,uz;
+  if(Math.abs(ax)<0.9){ux=0;uy=-az;uz=ay;}else{ux=az;uy=0;uz=-ax;}
+  var ul=Math.sqrt(ux*ux+uy*uy+uz*uz)||1;ux/=ul;uy/=ul;uz/=ul;
+  // second perp = axis x u
+  var vx=ay*uz-az*uy, vy=az*ux-ax*uz, vz=ax*uy-ay*ux;
+  var dA=2*Math.PI/nA;
+  function circ(t,a){
+    var c=Math.cos(a)*r, s=Math.sin(a)*r;
+    return [p0[0]+ax*t+ux*c+vx*s, p0[1]+ay*t+uy*c+vy*s, p0[2]+az*t+uz*c+vz*s];
+  }
+  function nrm(a){var c=Math.cos(a),s=Math.sin(a);return[ux*c+vx*s,uy*c+vy*s,uz*c+vz*s];}
+  function push2(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+  for(var j=0;j<nA;j++){
+    var a0=j*dA, a1=a0+dA;
+    var p00=circ(0,a0),p10=circ(len,a0),p01=circ(0,a1),p11=circ(len,a1);
+    var n0=nrm(a0),n1=nrm(a1);
+    push2(p00,n0);push2(p10,n0);push2(p01,n1);
+    push2(p10,n0);push2(p11,n1);push2(p01,n1);
+  }
+  return verts;
+}
+
+// Build cone (arrowhead)
+function buildCone(tip,base,r,nA){
+  nA=nA||10;
+  var verts=[];
+  var ax=base[0]-tip[0],ay=base[1]-tip[1],az=base[2]-tip[2];
+  var len=Math.sqrt(ax*ax+ay*ay+az*az)||1;
+  ax/=len;ay/=len;az/=len;
+  var ux,uy,uz;
+  if(Math.abs(ax)<0.9){ux=0;uy=-az;uz=ay;}else{ux=az;uy=0;uz=-ax;}
+  var ul=Math.sqrt(ux*ux+uy*uy+uz*uz)||1;ux/=ul;uy/=ul;uz/=ul;
+  var vx2=ay*uz-az*uy,vy2=az*ux-ax*uz,vz2=ax*uy-ay*ux;
+  var dA=2*Math.PI/nA;
+  function baseP(a){var c=Math.cos(a)*r,s=Math.sin(a)*r;return[base[0]+ux*c+vx2*s,base[1]+uy*c+vy2*s,base[2]+uz*c+vz2*s];}
+  function push2(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+  for(var j=0;j<nA;j++){
+    var a0=j*dA,a1=a0+dA;
+    var b0=baseP(a0),b1=baseP(a1);
+    var n0=[ux*Math.cos(a0)+vx2*Math.sin(a0),uy*Math.cos(a0)+vy2*Math.sin(a0),uz*Math.cos(a0)+vz2*Math.sin(a0)];
+    var n1=[ux*Math.cos(a1)+vx2*Math.sin(a1),uy*Math.cos(a1)+vy2*Math.sin(a1),uz*Math.cos(a1)+vz2*Math.sin(a1)];
+    push2(tip,n0);push2(b0,n0);push2(b1,n1);
+  }
+  return verts;
+}
+
+// Build full XYZ axis set: 3 colored cylinders + arrowheads
+// Returns array of {verts, color} objects
+function buildAxes(origin,len,r){
+  var dirs=[
+    {d:[0,0,1],col:[0.80,0.10,0.10]},  // Z axis (revolution axis) — red
+    {d:[1,0,0],col:[0.10,0.55,0.10]},  // X — green
+    {d:[0,1,0],col:[0.10,0.30,0.85]}   // Y — blue
+  ];
+  var result=[];
+  dirs.forEach(function(ax){
+    var tip=[origin[0]+ax.d[0]*len, origin[1]+ax.d[1]*len, origin[2]+ax.d[2]*len];
+    var shaftEnd=[origin[0]+ax.d[0]*(len-r*4), origin[1]+ax.d[1]*(len-r*4), origin[2]+ax.d[2]*(len-r*4)];
+    var sv=buildCylinder(origin,shaftEnd,r,12);
+    var cv=buildCone(tip,shaftEnd,r*2.5,12);
+    var combined=sv.concat(cv);
+    result.push({verts:combined,col:ax.col});
+  });
+  return result;
+}
+
+function mkBuf(verts){
+  var b=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,b);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);
+  return b;
+}
+
+var _zMin=0,_zMax=1;
+
+// High-contrast palette — each surface clearly distinguishable
+var PALETTE3D = [
+  [0.18,0.22,0.78], // [0] main outer: strong cobalt blue
+  [0.90,0.32,0.12], // [1] inner (g fn / washer hole): vivid red-orange
+  [0.06,0.68,0.38], // [2] extra fn 3: emerald green
+  [0.88,0.60,0.02], // [3] extra fn 4: bright amber
+  [0.70,0.08,0.65], // [4] extra fn 5: magenta
+  [0.08,0.62,0.75], // [5] extra fn 6: cyan
+  [0.55,0.80,0.10]  // [6] extra fn 7: lime
+];
+
+function build3d(ui){
+  if(mesh.buf){gl.deleteBuffer(mesh.buf);mesh.buf=null;mesh.n=0;}
+  if(meshIn.buf){gl.deleteBuffer(meshIn.buf);meshIn.buf=null;meshIn.n=0;}
+  _extraMeshes.forEach(function(m){if(m.buf)gl.deleteBuffer(m.buf);});
+  _extraMeshes=[];
+  if(axBuf){gl.deleteBuffer(axBuf);axBuf=null;axN=0;}
+  _axesBufs.forEach(function(ab){if(ab.buf)gl.deleteBuffer(ab.buf);});
+  _axesBufs=[];
+
+  var a=ui.a, b=ui.b, k=ui.k||0;
+  var nT=100, nA=80;
+  var fnParsed3d=ui.fns.map(function(e){try{return mkFn(e);}catch(err){return null;}}).filter(Boolean);
+  if(!fnParsed3d.length) return;
+  var f=fnParsed3d[0];
+  var f2=fnParsed3d.length>1?fnParsed3d[1]:null;
+
+  var method=ui.method;
+  var axis=ui.axis;
+  var verts=[], vertsIn=[];
+  var allMeshes=[];
+
+  // ── Unified surface builder ──────────────────────────────────────
+  // The 3D solid shape depends ONLY on the axis and the region bounds.
+  // The method (disk/washer/shell) determines the integral formula, not the shape.
+  //
+  // HORIZONTAL revolution axis (x-axis or y=k):
+  //   Outer surface: r = |f(x) - axisY| revolved around the axis line
+  //   Inner surface: r = |g(x) - axisY| (washer/shell with 2 fns)
+  //   pt = [x,  r·cos(θ),  r·sin(θ)]
+  //
+  // VERTICAL revolution axis (y-axis or x=k):
+  //   Shell/disk solid: outer radius = x (the x-value itself)
+  //   Height at each x: from g(x) to f(x) (or 0 to f(x))
+  //   pt = [r·cos(θ),  height,  r·sin(θ)]  where r = x - axisX
+  // ─────────────────────────────────────────────────────────────────
+
+  function zId(t){return t;}
+
+  var isVertAxis = (axis==="yaxis"||axis==="cust_v");
+  var axisK = isVertAxis ? ((axis==="cust_v")?k:0) : ((axis==="cust_h")?k:0);
+
+  if(!isVertAxis){
+    // ── HORIZONTAL axis ── revolve f(x) and g(x) around y=axisK ──
+    // Outer surface (f):
+    verts = buildRevSurface(
+      function(t){ return Math.max(0, f(t) - axisK); },
+      zId, a, b, nT, nA
+    );
+    // Inner surface (g) — only if 2+ functions:
+    if(f2){
+      vertsIn = buildRevSurface(
+        function(t){ return Math.max(0, f2(t) - axisK); },
+        zId, a, b, nT, nA
+      );
+    }
+    // Extra functions (3rd+):
+    for(var fi=2; fi<fnParsed3d.length; fi++){
+      (function(fn,ci){
+        var ev = buildRevSurface(function(t){return Math.max(0,fn(t)-axisK);}, zId, a, b, nT, nA);
+        if(ev&&ev.length) allMeshes.push({verts:ev, col:PALETTE3D[Math.min(ci,PALETTE3D.length-1)]});
+      })(fnParsed3d[fi], fi);
+    }
+
+  } else {
+    // ── VERTICAL axis ── shells with radius = x - axisK, height = f(x) ──
+    // Outer surface (f):
+    // buildShellSurfaceVertical with correct x-to-radius mapping:
+    // Parameter x runs over [a,b]. Radius = |x - axisK|. Height = f(x).
+    // We pass axisK so the builder computes r = x - axisK internally.
+    verts = buildShellSurfaceVerticalX(
+      function(x){ return Math.max(0, f(x)); },
+      f2 ? function(x){ return Math.max(0, f2(x)); } : null,
+      a, b, nT, nA, axisK
+    );
+    if(f2){
+      vertsIn = buildShellSurfaceVerticalX(
+        function(x){ return Math.max(0, f2(x)); },
+        null, a, b, nT, nA, axisK
+      );
+    }
+    for(var fi=2; fi<fnParsed3d.length; fi++){
+      (function(fn,ci){
+        var ev = buildShellSurfaceVerticalX(function(x){return Math.max(0,fn(x));}, null, a, b, nT, nA, axisK);
+        if(ev&&ev.length) allMeshes.push({verts:ev, col:PALETTE3D[Math.min(ci,PALETTE3D.length-1)]});
+      })(fnParsed3d[fi], fi);
+    }
+  }
+
+  // Store extra meshes
+  allMeshes.forEach(function(m){
+    _extraMeshes.push({buf:mkBuf(m.verts), n:m.verts.length/6, col:m.col});
+  });
+
+  // ── Camera positioning ──
+  _zMin=a; _zMax=b;
+  var mid=(a+b)/2;
+
+  // Sample max radius/height for camera distance
+  var maxR=0, maxH=0;
+  for(var i=0;i<=50;i++){
+    var t=a+i*(b-a)/50;
+    try{ var rv=f(t); if(isFinite(rv)){ maxR=Math.max(maxR,Math.abs(rv-axisK)); maxH=Math.max(maxH,Math.abs(rv)); } }catch(e){}
+    if(f2){ try{ var rv2=f2(t); if(isFinite(rv2)){ maxR=Math.max(maxR,Math.abs(rv2-axisK)); } }catch(e){} }
+  }
+  maxR=Math.max(maxR,0.5);
+
+  if(isVertAxis){
+    // Y is height axis. Radius goes from |a-axisK| to |b-axisK|
+    var maxRadius=Math.max(Math.abs(a-axisK), Math.abs(b-axisK));
+    cam.cx=0; cam.cy=maxH/2; cam.cz=0;
+    cam.dist=Math.max(maxRadius, maxH)*2.6;
+    cam.theta=0.6; cam.phi=1.2;
+  } else {
+    // X is revolution axis, solid centered at (mid, 0, 0)
+    cam.cx=mid; cam.cy=0; cam.cz=0;
+    cam.dist=Math.max((b-a)*1.6, maxR*3, 2.5);
+    cam.theta=0.55; cam.phi=1.1;
+  }
+
+  if(verts&&verts.length){ mesh.buf=mkBuf(verts); mesh.n=verts.length/6; }
+  if(vertsIn&&vertsIn.length){ meshIn.buf=mkBuf(vertsIn); meshIn.n=vertsIn.length/6; }
+
+  // Build XYZ axes anchored at true geometric origin [0,0,a]
+  // The solid revolves around Z, running from z=a to z=b
+  // X and Y are the radial directions (radius = f(x))
+  var maxR=0;
+  for(var i=0;i<=40;i++){var t=a+i*(b-a)/40;try{var rv=f(t);if(isFinite(rv))maxR=Math.max(maxR,Math.abs(rv));}catch(e){}}
+  maxR=Math.max(maxR,0.5);
+  var solidLen=b-a;
+  // Z axis runs the full length of the solid plus a small overhang
+  var zOverhang=solidLen*0.18;
+  // X, Y axes extend to cover the radial extent of the solid
+  var radialLen=maxR*1.25;
+  var axisR=Math.min(maxR,solidLen)*0.018;
+  // True geometric origin of the solid base: (0,0,a)
+  var origin=[a,0,0];
+
+  // Build axes manually with correct start/end points
+  // Axis layout depends on revolution axis
+  var isVertAxisForAxes = (ui.axis==="yaxis"||ui.axis==="cust_v");
+  var axDefs;
+  if(!isVertAxisForAxes){
+    // Horizontal revolution axis = X axis (red), radial = Y (green) and Z (blue)
+    axDefs=[
+      {from:[a-zOverhang*0.5,0,0], to:[b+zOverhang,0,0],   col:[0.82,0.10,0.10], lbl:"X"},
+      {from:[a,-radialLen*0.4,0],  to:[a,radialLen,0],       col:[0.10,0.60,0.10], lbl:"Y"},
+      {from:[a,0,-radialLen*0.4],  to:[a,0,radialLen],       col:[0.10,0.30,0.88], lbl:"Z"}
+    ];
+  } else {
+    // Vertical revolution axis = Y axis (red), radial = X (green) and Z (blue)
+    // For shell around y-axis: solid extends from y=0 to y=maxH, radius from 0 to b
+    var maxHForAxis=0;
+    for(var i2=0;i2<=40;i2++){var t2=a+i2*(b-a)/40;try{var hv=f(t2);if(isFinite(hv))maxHForAxis=Math.max(maxHForAxis,hv);}catch(e){}}
+    var yOverhang=maxHForAxis*0.18;
+    axDefs=[
+      {from:[0,-yOverhang*0.5,0],  to:[0,maxHForAxis+yOverhang,0], col:[0.82,0.10,0.10], lbl:"Y"},
+      {from:[-radialLen*0.3,0,0],  to:[radialLen,0,0],              col:[0.10,0.60,0.10], lbl:"X"},
+      {from:[0,0,-radialLen*0.3],  to:[0,0,radialLen],              col:[0.10,0.30,0.88], lbl:"Z"}
+    ];
+  }
+
+  _axesBufs=[];
+  _axisEndPts=[];
+  axDefs.forEach(function(ax){
+    // shaft to just before tip
+    var tipFrac=axisR*5;
+    var dir=[ax.to[0]-ax.from[0],ax.to[1]-ax.from[1],ax.to[2]-ax.from[2]];
+    var dlen=Math.sqrt(dir[0]*dir[0]+dir[1]*dir[1]+dir[2]*dir[2])||1;
+    var dn=[dir[0]/dlen,dir[1]/dlen,dir[2]/dlen];
+    var shaftEnd=[ax.to[0]-dn[0]*tipFrac*2.5, ax.to[1]-dn[1]*tipFrac*2.5, ax.to[2]-dn[2]*tipFrac*2.5];
+    var sv=buildCylinder(ax.from,shaftEnd,axisR,12);
+    var cv=buildCone(ax.to,shaftEnd,axisR*2.8,12);
+    var combined=sv.concat(cv);
+    var buf=mkBuf(combined);
+    _axesBufs.push({buf:buf,n:combined.length/6,col:ax.col});
+    _axisEndPts.push(ax.to);
+  });
+
+  render3d(_zMin,_zMax);
+}
+
+// ── Zoom & reset ──
+window.zoomIn=function(){ cam.dist=Math.max(0.8,cam.dist*0.82); render3d(_zMin,_zMax); projectAxisLabels(); };
+window.zoomOut=function(){ cam.dist=Math.min(30,cam.dist*1.22); render3d(_zMin,_zMax); projectAxisLabels(); };
+window.resetCam=function(){
+  var mid=(_zMin+_zMax)/2;
+  cam.theta=0.55; cam.phi=1.1;
+  cam.dist=Math.max((_zMax-_zMin)*1.9,3.5);
+  cam.cx=mid;cam.cy=0;cam.cz=0;
+  render3d(_zMin,_zMax); projectAxisLabels();
+};
+
+// ── Project 3D world point → 2D canvas pixel ──
+var _lastMVP=null;
+function project(wx,wy,wz){
+  if(!_lastMVP) return null;
+  var m=_lastMVP;
+  var cx=m[0]*wx+m[4]*wy+m[8]*wz+m[12];
+  var cy=m[1]*wx+m[5]*wy+m[9]*wz+m[13];
+  var cw=m[3]*wx+m[7]*wy+m[11]*wz+m[15];
+  if(Math.abs(cw)<0.0001) return null;
+  var ndcx=cx/cw, ndcy=cy/cw;
+  var W=cvs3.width, H=cvs3.height;
+  return{ x:(ndcx+1)*0.5*W, y:(1-ndcy)*0.5*H };
+}
+
+// ── Draw axis labels as SVG overlaid on the canvas ──
+var _axisEndPts=[];  // world positions of axis tips, set in build3d
+function projectAxisLabels(){
+  var svg=document.getElementById("axis-svg");
+  if(!svg||!_lastMVP){ return; }
+  // clear
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  // Labels match the axDefs order built in build3d
+  var _isVertForLabel=(_lastUI&&(_lastUI.axis==="yaxis"||_lastUI.axis==="cust_v"));
+  var defs = _isVertForLabel ? [
+    {pt:_axisEndPts[0],lbl:"Y",col:"#d01010"},
+    {pt:_axisEndPts[1],lbl:"X",col:"#0f8f0f"},
+    {pt:_axisEndPts[2],lbl:"Z",col:"#1133dd"}
+  ] : [
+    {pt:_axisEndPts[0],lbl:"X",col:"#d01010"},
+    {pt:_axisEndPts[1],lbl:"Y",col:"#0f8f0f"},
+    {pt:_axisEndPts[2],lbl:"Z",col:"#1133dd"}
+  ];
+  var W=cvs3.clientWidth||cvs3.width;
+  var H=cvs3.clientHeight||cvs3.height;
+  defs.forEach(function(d){
+    if(!d.pt) return;
+    var p=project(d.pt[0],d.pt[1],d.pt[2]);
+    if(!p) return;
+    // Scale from framebuffer coords to CSS coords
+    var scaleX=W/(cvs3.width||W);
+    var scaleY=H/(cvs3.height||H);
+    var px=p.x*scaleX, py=p.y*scaleY;
+    // Background circle
+    var circle=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    circle.setAttribute("cx",px); circle.setAttribute("cy",py);
+    circle.setAttribute("r","11");
+    circle.setAttribute("fill","white");
+    circle.setAttribute("stroke",d.col);
+    circle.setAttribute("stroke-width","2");
+    circle.setAttribute("opacity","0.92");
+    svg.appendChild(circle);
+    // Letter
+    var text=document.createElementNS("http://www.w3.org/2000/svg","text");
+    text.setAttribute("x",px); text.setAttribute("y",py+4.5);
+    text.setAttribute("text-anchor","middle");
+    text.setAttribute("font-size","12");
+    text.setAttribute("font-weight","700");
+    text.setAttribute("font-family","system-ui,sans-serif");
+    text.setAttribute("fill",d.col);
+    text.textContent=d.lbl;
+    svg.appendChild(text);
+  });
+}
+
+// Drag/zoom
+wrap3.addEventListener("mousedown",function(e){drag.active=true;drag.x=e.clientX;drag.y=e.clientY;e.preventDefault();});// Drag/zoom
+wrap3.addEventListener("mousedown",function(e){drag.active=true;drag.x=e.clientX;drag.y=e.clientY;e.preventDefault();});
+window.addEventListener("mousemove",function(e){
+  if(!drag.active)return;
+  cam.theta-=(e.clientX-drag.x)*0.013;
+  cam.phi=Math.max(0.05,Math.min(Math.PI-0.05,cam.phi-(e.clientY-drag.y)*0.013));
+  drag.x=e.clientX;drag.y=e.clientY;
+  render3d(_zMin,_zMax); projectAxisLabels();
+});
+window.addEventListener("mouseup",function(){drag.active=false;});
+wrap3.addEventListener("wheel",function(e){
+  e.preventDefault();
+  cam.dist=Math.max(1,Math.min(25,cam.dist+e.deltaY*0.008));
+  render3d(_zMin,_zMax); projectAxisLabels();
+},{passive:false});
+var t0=null;
+wrap3.addEventListener("touchstart",function(e){if(e.touches.length===1)t0={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+wrap3.addEventListener("touchmove",function(e){
+  if(e.touches.length===1&&t0){
+    cam.theta-=(e.touches[0].clientX-t0.x)*0.013;
+    cam.phi=Math.max(0.05,Math.min(Math.PI-0.05,cam.phi-(e.touches[0].clientY-t0.y)*0.013));
+    t0={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    render3d(_zMin,_zMax); projectAxisLabels();
+  }
+},{passive:true});
+wrap3.addEventListener("touchend",function(){t0=null;},{passive:true});
+
+/* ══════════════════════════════════════
+   FORMULA BAR
+══════════════════════════════════════ */
+var FMLA={
+  disk_xaxis:"V = &pi;&int;<sub>a</sub><sup>b</sup> [f(x)]&sup2; dx",
+  disk_yaxis:"V = &pi;&int;<sub>a</sub><sup>b</sup> [f(y)]&sup2; dy",
+  disk_cust_h:"V = &pi;&int;<sub>a</sub><sup>b</sup> [f(x)&minus;k]&sup2; dx",
+  disk_cust_v:"V = &pi;&int;<sub>a</sub><sup>b</sup> [f(y)&minus;k]&sup2; dy",
+  washer_xaxis:"V = &pi;&int;<sub>a</sub><sup>b</sup> {[f(x)]&sup2;&minus;[g(x)]&sup2;} dx",
+  washer_yaxis:"V = &pi;&int;<sub>a</sub><sup>b</sup> {[f(y)]&sup2;&minus;[g(y)]&sup2;} dy",
+  washer_cust_h:"V = &pi;&int;<sub>a</sub><sup>b</sup> {[f(x)&minus;k]&sup2;&minus;[g(x)&minus;k]&sup2;} dx",
+  washer_cust_v:"V = &pi;&int;<sub>a</sub><sup>b</sup> {[f(y)&minus;k]&sup2;&minus;[g(y)&minus;k]&sup2;} dy",
+  shell_yaxis:"V = 2&pi;&int;<sub>a</sub><sup>b</sup> x&middot;f(x) dx",
+  shell_cust_v:"V = 2&pi;&int;<sub>a</sub><sup>b</sup> |x&minus;k|&middot;f(x) dx",
+  shell_xaxis:"V = 2&pi;&int;<sub>a</sub><sup>b</sup> y&middot;f(y) dy",
+  shell_cust_h:"V = 2&pi;&int;<sub>a</sub><sup>b</sup> |y&minus;k|&middot;f(y) dy"
+};
+function updateFmla(ui){
+  var key=ui.method+"_"+ui.axis;
+  var fmla=FMLA[key]||FMLA[ui.method+"_xaxis"];
+  // For shell with only one function and horizontal axis, simplify formula
+  var hasTwoFns = ui.fns && ui.fns.filter(function(s){return s.trim();}).length>=2;
+  if(ui.method==="shell" && (ui.axis==="xaxis"||ui.axis==="cust_h")){
+    if(!hasTwoFns){
+      // Single fn: V = 2π∫y·f⁻¹(y)dy (only outer, no inner)
+      fmla = (ui.axis==="xaxis")
+        ? "V = 2&pi;&int;<sub>a</sub><sup>b</sup> y&middot;f<sup>&minus;1</sup>(y) dy"
+        : "V = 2&pi;&int;<sub>a</sub><sup>b</sup> |y&minus;k|&middot;f<sup>&minus;1</sup>(y) dy";
+    }
+  }
+  // For disk/washer with two fns, formula already handles it
+  document.getElementById("fmla").innerHTML=fmla;
+  var lbl={disk:"Disk",washer:"Washer",shell:"Shell"};
+  document.getElementById("mBadge").textContent=lbl[ui.method];
+}
+
+/* ══════════════════════════════════════
+   MAIN DRAW
+══════════════════════════════════════ */
+/* ══════════════════════════════════════
+   AUTO-DETECT LIMITS FROM INTERSECTIONS
+══════════════════════════════════════ */
+function _bisect(fn,lo,hi,tol,maxIt){
+  tol=tol||1e-9; maxIt=maxIt||80;
+  var flo=fn(lo),fhi=fn(hi);
+  if(!isFinite(flo)||!isFinite(fhi)) return null;
+  if(flo*fhi>0) return null;
+  for(var i=0;i<maxIt;i++){
+    var m=(lo+hi)/2, fm=fn(m);
+    if(Math.abs(fm)<tol||Math.abs(hi-lo)<tol) return m;
+    if(flo*fm<=0){hi=m;fhi=fm;}else{lo=m;flo=fm;}
+  }
+  return (lo+hi)/2;
+}
+function _findRoots(fn,xMin,xMax,nScan){
+  nScan=nScan||600;
+  var roots=[],h=(xMax-xMin)/nScan,prev=null,prevX=xMin;
+  for(var i=0;i<=nScan;i++){
+    var xi=xMin+i*h,vi;
+    try{vi=fn(xi);}catch(e){prev=null;continue;}
+    if(!isFinite(vi)){prev=null;continue;}
+    if(prev!==null&&prev*vi<0){
+      var r=_bisect(fn,prevX,xi);
+      if(r!==null&&roots.every(function(rr){return Math.abs(rr-r)>1e-6;})) roots.push(r);
+    }
+    prev=vi; prevX=xi;
+  }
+  return roots;
+}
+
+function autoDetectLimits(){
+  // Parse functions
+  var fns=[];
+  document.querySelectorAll(".fn-input-field").forEach(function(inp){
+    var v=inp.value.trim(); if(v) fns.push(v);
+  });
+  if(fns.length===0) return null;
+
+  var method=document.querySelector(".tab.active").dataset.method;
+  var axis=document.getElementById("axis").value;
+  var k=parseFloat(document.getElementById("kVal").value||"0")||0;
+  var isVertical=(axis==="yaxis"||axis==="cust_v");
+
+  var parsedFns=[];
+  for(var i=0;i<fns.length;i++){
+    try{parsedFns.push(mkFn(fns[i]));}catch(e){return null;}
+  }
+
+  // Search domain: broad scan
+  var searchMin=-20, searchMax=20, candidates=[];
+
+  if(fns.length===1){
+    // Single function: find x-intercepts (f meets axis)
+    var f0=parsedFns[0];
+    var axisVal=(axis==="cust_h")?k:0;
+
+    if(!isVertical){
+      // Horizontal axis: find where f(x) = axisVal
+      var roots=_findRoots(function(x){try{return f0(x)-axisVal;}catch(e){return NaN;}},searchMin,searchMax);
+      // Also include where f(x)=0 if axis is x-axis
+      if(axis==="xaxis"){
+        var zeros=_findRoots(function(x){try{return f0(x);}catch(e){return NaN;}},searchMin,searchMax);
+        zeros.forEach(function(r){if(candidates.indexOf(r)<0) candidates.push(r);});
+      }
+      roots.forEach(function(r){if(candidates.every(function(c){return Math.abs(c-r)>1e-5;})) candidates.push(r);});
+    } else {
+      // Vertical axis: find where f(x) = 0 or f(x) = k (x-intercepts become y-intercepts)
+      var axisXval=(axis==="cust_v")?k:0;
+      var roots=_findRoots(function(x){try{return f0(x);}catch(e){return NaN;}},searchMin,searchMax);
+      roots.forEach(function(r){candidates.push(r);});
+      // Also include axisX
+      if(candidates.every(function(c){return Math.abs(c-axisXval)>1e-5;})) candidates.push(axisXval);
+    }
+  } else {
+    // Multiple functions: pairwise intersections
+    for(var i=0;i<parsedFns.length;i++){
+      for(var j=i+1;j<parsedFns.length;j++){
+        (function(fa,fb){
+          var roots=_findRoots(function(x){try{return fa(x)-fb(x);}catch(e){return NaN;}},searchMin,searchMax);
+          roots.forEach(function(r){
+            if(candidates.every(function(c){return Math.abs(c-r)>1e-5;})) candidates.push(r);
+          });
+        })(parsedFns[i],parsedFns[j]);
+      }
+    }
+    // Also check intersections with axis line
+    var axisVal2=(axis==="cust_h")?k:0;
+    parsedFns.forEach(function(fn){
+      var roots=_findRoots(function(x){try{return fn(x)-axisVal2;}catch(e){return NaN;}},searchMin,searchMax);
+      roots.forEach(function(r){
+        if(candidates.every(function(c){return Math.abs(c-r)>1e-5;})) candidates.push(r);
+      });
+    });
+  }
+
+  candidates.sort(function(a,b){return a-b;});
+
+  if(candidates.length<2){
+    // Fall back: try common origin + intersection with axis
+    if(candidates.length===1){
+      // Try to find another boundary
+      var f0=parsedFns[0];
+      var otherRoots=_findRoots(function(x){try{return f0(x);}catch(e){return NaN;}},searchMin,searchMax);
+      otherRoots.forEach(function(r){
+        if(candidates.every(function(c){return Math.abs(c-r)>1e-5;})) candidates.push(r);
+      });
+      candidates.sort(function(a,b){return a-b;});
+    }
+    if(candidates.length<2) return null;
+  }
+
+  // Pick the best pair: smallest interval where the region has positive area
+  // For washer: we want where f > g; for disk: where f > axis
+  var bestA=null, bestB=null, bestScore=-1;
+
+  for(var i=0;i<candidates.length-1;i++){
+    var lo=candidates[i], hi=candidates[i+1];
+    if(hi-lo<1e-6) continue;
+    var mid=(lo+hi)/2;
+
+    var score=0;
+    try{
+      if(parsedFns.length>=2){
+        // washer/shell: check f1 > f2 or f2 > f1 in this interval
+        var diff=parsedFns[0](mid)-parsedFns[1](mid);
+        score=Math.abs(diff)*(hi-lo);
+      } else {
+        // disk: check f > axis
+        var axVal=(axis==="cust_h")?k:0;
+        var val=parsedFns[0](mid)-axVal;
+        score=Math.abs(val)*(hi-lo);
+      }
+    }catch(e){}
+
+    if(score>bestScore){bestScore=score;bestA=lo;bestB=hi;}
+  }
+
+  // If no good pair found, just use the outermost two candidates
+  if(bestA===null&&candidates.length>=2){
+    bestA=candidates[0]; bestB=candidates[candidates.length-1];
+  }
+
+  if(bestA===null) return null;
+  return {a:+bestA.toFixed(6), b:+bestB.toFixed(6)};
+}
+
+window.detectAndDraw=function(){
+  var result=autoDetectLimits();
+  if(!result){
+    // Show gentle message if detection fails
+    showErr("Could not auto-detect limits. Please enter them manually.");
+    return;
+  }
+  document.getElementById("aVal").value=result.a;
+  document.getElementById("bVal").value=result.b;
+  clrErr();
+  draw();
+  // Show info
+  var bar=document.getElementById("errMsg");
+  bar.style.display="block";
+  bar.style.color="#0a6640";
+  bar.style.background="#f0fff6";
+  bar.style.borderColor="#6ee7b7";
+  bar.textContent="✓ Limits auto-set: a = "+result.a+"  b = "+result.b;
+  setTimeout(function(){clrErr();bar.style.color="";bar.style.background="";bar.style.borderColor="";},4000);
+};
+
+window.draw=function(){
+  var ui=getUI();
+  if(!validate(ui))return;
+  _lastUI=ui;
+  _vp2d={xMin:null,xMax:null,yMin:null,yMax:null}; // reset zoom on new draw
+  updateFmla(ui);
+  showVol(calcVol(ui));
+  initSlider(ui);
+  var sl=parseFloat(document.getElementById("rectSlider").value);
+  if(sl<ui.a||sl>ui.b) sl=(ui.a+ui.b)/2;
+  try{draw2d(ui,sl);}catch(e){console.warn("2D:",e);}
+  if(gl){try{build3d(ui);}catch(e){console.warn("3D:",e);}}
+};
+
+/* ══════════════════════════════════════
+   UI WIRING
+══════════════════════════════════════ */
+/* ══════════════════════════════════════
+   DYNAMIC FUNCTION ROWS
+══════════════════════════════════════ */
+var FN_COLORS_CSS=["#3a3296","#0d6e4c","#c2410c","#7c3aed","#b45309","#0e7490","#be185d"];
+var FN_ROLE_LABELS={
+  disk:  ["f(x) — function","","","","","",""],
+  washer:["f(x) — outer","g(x) — inner","h(x) — extra","p(x) — extra","","",""],
+  shell: ["f(x) — function","g(x) — extra","h(x) — extra","","","",""]
+};
+var _fnRowCount=0;
+
+function getFnRoleLabel(method,idx){
+  var labels=FN_ROLE_LABELS[method]||[];
+  return labels[idx]||(["f","g","h","p","q","r","s"][idx]||"fn")+"(x)";
+}
+
+window.addFnRow=function(expr,idx){
+  var method=document.querySelector(".tab.active").dataset.method;
+  var container=document.getElementById("fn-container");
+  var i=(idx!==undefined)?idx:container.children.length;
+  var col=FN_COLORS_CSS[i%FN_COLORS_CSS.length];
+  var rowId="fn-row-"+(_fnRowCount++);
+  var row=document.createElement("div");
+  row.className="fn-row"; row.id=rowId;
+  var dot=document.createElement("span");
+  dot.className="fn-color-dot"; dot.style.background=col;
+  var lbl=document.createElement("span");
+  lbl.className="fn-role"; lbl.textContent=getFnRoleLabel(method,i);
+  var inp=document.createElement("input");
+  inp.type="text"; inp.className="fn-input fn-input-field";
+  inp.value=expr||""; inp.placeholder="e.g. x^2, sin(x), sqrt(x)";
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter")draw();});
+  var btn=document.createElement("button");
+  btn.className="fn-remove"; btn.title="Remove"; btn.innerHTML="&times;";
+  btn.onclick=function(){
+    if(container.children.length>1){container.removeChild(row);refreshFnLabels();}
+  };
+  row.appendChild(dot); row.appendChild(lbl); row.appendChild(inp);
+  // Only show remove button if not the first required row
+  if(i>0) row.appendChild(btn);
+  container.appendChild(row);
+};
+
+function refreshFnLabels(){
+  var method=document.querySelector(".tab.active").dataset.method;
+  var rows=document.querySelectorAll("#fn-container .fn-row");
+  rows.forEach(function(row,i){
+    var col=FN_COLORS_CSS[i%FN_COLORS_CSS.length];
+    row.querySelector(".fn-color-dot").style.background=col;
+    row.querySelector(".fn-role").textContent=getFnRoleLabel(method,i);
+    // Show/hide remove button
+    var btn=row.querySelector(".fn-remove");
+    if(btn) btn.style.display=i===0?"none":"flex";
+  });
+}
+
+function initFnRows(method,f1val,f2val){
+  var container=document.getElementById("fn-container");
+  while(container.firstChild) container.removeChild(container.firstChild);
+  _fnRowCount=0;
+  addFnRow(f1val||"sqrt(x)",0);
+  if(method==="washer"||method==="shell"){
+    addFnRow(f2val||"",1);
+  }
+  // Show/hide add button based on method
+  document.getElementById("addFnBtn").style.display=
+    (method==="disk")?"none":"inline-flex";
+}
+
+window.selMethod=function(el){
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
+  el.classList.add("active");
+  var m=el.dataset.method;
+  var ui=getUI();
+  initFnRows(m, ui.fns[0]||"", ui.fns[1]||"");
+  updateFmla(getUI());
+};
+window.onAxisChange=function(){
+  var v=document.getElementById("axis").value,show=v==="cust_h"||v==="cust_v";
+  document.getElementById("kwrap").classList.toggle("hidden",!show);
+  document.getElementById("klbl").textContent=v==="cust_h"?"k (y=k)":"k (x=k)";
+  updateFmla(getUI());
+};
+
+/* ══════════════════════════════════════
+   i18n
+══════════════════════════════════════ */
+window.setLang=function(lg){
+  document.querySelectorAll(".lang-btn").forEach(function(b){
+    b.classList.toggle("active",(lg==="en"&&b.textContent==="English")||(lg==="es"&&b.textContent==="Español"));
+  });
+  if(lg==="es"){
+    document.getElementById("ttl").textContent="Sólido de Revolución — Visualización Interactiva";
+    document.getElementById("sub").innerHTML="Métodos del Disco, Arandela y Cáscara &nbsp;|&nbsp; Cálculo II";
+    document.querySelector(".tab[data-method='disk'] .T").textContent="Método del disco";
+    document.querySelector(".tab[data-method='washer'] .T").textContent="Método de la arandela";
+    document.querySelector(".tab[data-method='shell'] .T").textContent="Método de la cáscara";
+    document.querySelector(".T[data-k='exLbl']").textContent="Ejemplos:";
+    document.querySelector(".T[data-k='volLbl']").textContent="Volumen:";
+    document.querySelector(".T[data-k='v2d']").innerHTML="Región y eje";
+    document.querySelector(".T[data-k='v3d']").textContent="Sólido de revolución";
+    document.querySelector(".T[data-k='drawBtn']").textContent="Graficar";
+    document.querySelector(".T[data-k='detectBtn']").textContent="Límites auto";
+    document.querySelector(".T[data-k='sliderLbl']").textContent="Rectángulo representativo en x =";
+    document.querySelector(".T[data-k='hint3d']").textContent="Arrastra para rotar · Rueda para zoom";
+  }else{
+    document.getElementById("ttl").textContent="Solid of Revolution — Interactive Visualization";
+    document.getElementById("sub").innerHTML="Disk, Washer &amp; Shell Methods &nbsp;|&nbsp; Calculus II";
+    document.querySelector(".tab[data-method='disk'] .T").textContent="Disk method";
+    document.querySelector(".tab[data-method='washer'] .T").textContent="Washer method";
+    document.querySelector(".tab[data-method='shell'] .T").textContent="Shell method";
+    document.querySelector(".T[data-k='exLbl']").textContent="Examples:";
+    document.querySelector(".T[data-k='volLbl']").textContent="Volume:";
+    document.querySelector(".T[data-k='v2d']").innerHTML="Region &amp; axis";
+    document.querySelector(".T[data-k='v3d']").textContent="Solid of revolution";
+    document.querySelector(".T[data-k='drawBtn']").textContent="Draw";
+    document.querySelector(".T[data-k='detectBtn']").textContent="Auto limits";
+    document.querySelector(".T[data-k='sliderLbl']").textContent="Representative rectangle at x =";
+    document.querySelector(".T[data-k='hint3d']").textContent="Drag to rotate · Scroll to zoom";
+  }
+};
+
+/* ══════════════════════════════════════
+   EXAMPLES
+══════════════════════════════════════ */
+var EX={
+  d1:{method:"disk", f1:"sqrt(x)",  f2:"",    a:0,b:4,      axis:"xaxis",k:0},
+  d2:{method:"disk", f1:"x^2",      f2:"",    a:0,b:2,      axis:"yaxis",k:0},
+  d3:{method:"disk", f1:"sin(x)",   f2:"",    a:0,b:3.14159,axis:"xaxis",k:0},
+  w1:{method:"washer",f1:"x",       f2:"x^2", a:0,b:1,      axis:"xaxis",k:0},
+  w2:{method:"washer",f1:"sqrt(x)", f2:"x",   a:0,b:1,      axis:"xaxis",k:0},
+  s1:{method:"shell", f1:"x^2",     f2:"",    a:0,b:2,      axis:"yaxis",k:0},
+  s2:{method:"shell", f1:"sin(x)",  f2:"",    a:0,b:3.14159,axis:"yaxis",k:0}
+};
+window.loadEx=function(key){
+  var e=EX[key];if(!e)return;
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
+  document.querySelector(".tab[data-method='"+e.method+"']").classList.add("active");
+  initFnRows(e.method, e.f1, e.f2||"");
+  document.getElementById("aVal").value=e.a;
+  document.getElementById("bVal").value=e.b;
+  document.getElementById("axis").value=e.axis;
+  document.getElementById("kVal").value=e.k||0;
+  document.getElementById("kwrap").classList.toggle("hidden",e.axis!=="cust_h"&&e.axis!=="cust_v");
+  draw();
+};
+
+/* ══════════════════════════════════════
+   BOOT
+══════════════════════════════════════ */
+window.addEventListener("resize",function(){
+  resize2d();
+  cvs3.width=wrap3.clientWidth||500;
+  cvs3.height=wrap3.clientHeight||380;
+  if(_lastUI&&validate(_lastUI)){
+    var sl=parseFloat(document.getElementById("rectSlider").value);
+    draw2d(_lastUI,sl);
+    render3d(_zMin,_zMax); projectAxisLabels();
+  }
+});
+
+var glOK=initGL();
+if(!glOK){
+  wrap3.innerHTML='<div style="color:#f87171;padding:24px;text-align:center;font-size:13px;line-height:1.6">WebGL not available.<br>Try Chrome or Firefox.</div>';
+}
+initFnRows("disk","sqrt(x)","");
+updateFmla(getUI());
+draw();
+
+})();
+</script>
+</body>
+</html>
