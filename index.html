@@ -735,18 +735,29 @@ function draw2d(ui, rectX){
       ctx2.strokeRect(sLeft, syT, stripW, rectThick);
 
       // Double-headed horizontal arrow ABOVE strip
-      var arrY2 = syT - 10;
+      var arrY2 = syT - 16; // extra clearance to avoid overlapping curve labels
       ctx2.strokeStyle="#ea580c"; ctx2.lineWidth=1.5;
       ctx2.beginPath(); ctx2.moveTo(sLeft, arrY2); ctx2.lineTo(sRight, arrY2); ctx2.stroke();
       arrowHead2(sLeft,  arrY2, -1, 0);
       arrowHead2(sRight, arrY2,  1, 0);
 
-      // Labels
+      // Labels — with background plate to avoid visual collision
+      // with other plot text (intersection points, etc.)
+      ctx2.font="10px system-ui";
+      ctx2.textAlign="center";
+      var dimX = (sLeft+sRight)/2, dimY = arrY2-8;
+      var dimW = ctx2.measureText(dimLabel2).width;
+      ctx2.fillStyle="rgba(255,255,255,0.88)";
+      ctx2.fillRect(dimX-dimW/2-4, dimY-11, dimW+8, 14);
       ctx2.fillStyle="#ea580c";
+      ctx2.fillText(dimLabel2, dimX, dimY);
+
       ctx2.font="bold 11px system-ui"; ctx2.textAlign="left";
+      var posW = ctx2.measureText(posLabel2).width;
+      ctx2.fillStyle="rgba(255,255,255,0.88)";
+      ctx2.fillRect(sRight+6, sy(ry)-9, posW+6, 14);
+      ctx2.fillStyle="#ea580c";
       ctx2.fillText(posLabel2, sRight+8, sy(ry)+4);
-      ctx2.font="10px system-ui"; ctx2.textAlign="center";
-      ctx2.fillText(dimLabel2, (sLeft+sRight)/2, arrY2-7);
 
       // Dashed radius arm from axis to left edge of strip
       var guideAxisX = (ui.axis==="cust_v") ? k : 0;
@@ -1215,6 +1226,61 @@ function buildRevSurface(rFn,zFn,tMin,tMax,nT,nA){
 // Produces ONE smooth lateral surface (no per-band caps).
 // If botFn is given, also returns top/bottom cap info via the
 // returned object so the caller can build a proper annular cap.
+// ── Lateral-only surface of revolution around vertical axis ──
+// No end caps — pure side wall. Caller adds caps separately.
+function buildLateralOnlyVertical(hFn, xMin, xMax, nX, nA, axisK){
+  axisK = axisK||0;
+  var verts=[], dX=(xMax-xMin)/nX, dA=2*Math.PI/nA;
+  function push(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+  function norm3(n){var l=Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2])||1;return[n[0]/l,n[1]/l,n[2]/l];}
+  function cross3(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+  function sub3(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+
+  var pts=[];
+  for(var i=0;i<=nX;i++){
+    var x=xMin+i*dX;
+    var r=Math.abs(x-axisK);
+    var h=hFn(x);
+    if(!isFinite(h)) h=0;
+    pts.push({r:r,h:Math.max(0,h)});
+  }
+  for(var i=0;i<nX;i++){
+    var r0=pts[i].r,h0=pts[i].h,r1=pts[i+1].r,h1=pts[i+1].h;
+    for(var j=0;j<nA;j++){
+      var ang0=j*dA,ang1=ang0+dA;
+      var c0=Math.cos(ang0),s0=Math.sin(ang0),c1=Math.cos(ang1),s1=Math.sin(ang1);
+      var P00=[r0*c0,h0,r0*s0],P01=[r0*c1,h0,r0*s1];
+      var P10=[r1*c0,h1,r1*s0],P11=[r1*c1,h1,r1*s1];
+      var n0=norm3(cross3(sub3(P10,P00),sub3(P01,P00)));
+      var n1=norm3(cross3(sub3(P11,P10),sub3(P01,P10)));
+      push(P00,n0);push(P10,n0);push(P01,n0);
+      push(P10,n1);push(P11,n1);push(P01,n1);
+    }
+  }
+  return verts;
+}
+
+// ── Annular end cap: ring from (rIn,hIn) to (rOut,hOut) ──
+// If rIn≈rOut and hIn≈hOut, produces nothing (degenerate, skipped)
+function buildEndCapAnnular(rIn, hIn, rOut, hOut, nA){
+  var verts=[], dA=2*Math.PI/nA;
+  function push(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+  // Cap is roughly horizontal-ish; normal approximated as vertical
+  // (exact normal would need cross product, but for thin caps this is visually fine)
+  var avgH=(hIn+hOut)/2;
+  var nrm=[0, hOut>=hIn?1:-1, 0];
+  if(Math.abs(rOut-rIn)<1e-9 && Math.abs(hOut-hIn)<1e-9) return verts;
+  for(var j=0;j<nA;j++){
+    var a0=j*dA,a1=a0+dA;
+    var c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+    var I0=[rIn*c0,hIn,rIn*s0], I1=[rIn*c1,hIn,rIn*s1];
+    var O0=[rOut*c0,hOut,rOut*s0], O1=[rOut*c1,hOut,rOut*s1];
+    push(I0,nrm);push(O0,nrm);push(I1,nrm);
+    push(O0,nrm);push(O1,nrm);push(I1,nrm);
+  }
+  return verts;
+}
+
 function buildShellSurfaceVerticalX(hFn, botFn, xMin, xMax, nX, nA, axisK){
   axisK = axisK||0;
   var verts=[], dX=(xMax-xMin)/nX, dA=2*Math.PI/nA;
@@ -1503,28 +1569,52 @@ function build3d(ui){
     }
 
   } else {
-    // ── VERTICAL axis ── shells with radius = x - axisK, height = f(x) ──
-    // Outer surface (f):
-    // buildShellSurfaceVertical with correct x-to-radius mapping:
-    // Parameter x runs over [a,b]. Radius = |x - axisK|. Height = f(x).
-    // We pass axisK so the builder computes r = x - axisK internally.
-    verts = buildShellSurfaceVerticalX(
-      function(x){ return Math.max(0, f(x)); },
-      f2 ? function(x){ return Math.max(0, f2(x)); } : null,
-      a, b, nT, nA, axisK
+    // ── VERTICAL axis ── solid revolves around x=axisK ──
+    // Radius at parameter x: r(x) = x - axisK (can be far from 0 if
+    // axisK lies outside [a,b] — produces a hollow tube/washer shape)
+    var hasOffsetAxis = (Math.min(Math.abs(a-axisK),Math.abs(b-axisK)) > 1e-6);
+
+    // Lateral surfaces only — caps built separately below
+    verts = buildLateralOnlyVertical(
+      function(x){ return Math.max(0, f(x)); }, a, b, nT, nA, axisK
     );
     if(f2){
-      vertsIn = buildShellSurfaceVerticalX(
-        function(x){ return Math.max(0, f2(x)); },
-        null, a, b, nT, nA, axisK
+      vertsIn = buildLateralOnlyVertical(
+        function(x){ return Math.max(0, f2(x)); }, a, b, nT, nA, axisK
       );
     }
     for(var fi=2; fi<fnParsed3d.length; fi++){
       (function(fn,ci){
-        var ev = buildShellSurfaceVerticalX(function(x){return Math.max(0,fn(x));}, null, a, b, nT, nA, axisK);
+        var ev = buildLateralOnlyVertical(function(x){return Math.max(0,fn(x));}, a, b, nT, nA, axisK);
         if(ev&&ev.length) allMeshes.push({verts:ev, col:PALETTE3D[Math.min(ci,PALETTE3D.length-1)]});
       })(fnParsed3d[fi], fi);
     }
+
+    // ── Build correct end caps ──
+    // At x=a and x=b, connect the OUTER radius to the INNER radius
+    // (or to r=0 if no g AND axis passes through the region)
+    var rA_out = Math.abs(a-axisK), hA_out = Math.max(0,f(a));
+    var rB_out = Math.abs(b-axisK), hB_out = Math.max(0,f(b));
+    var rA_in, hA_in, rB_in, hB_in;
+    if(f2){
+      rA_in = Math.abs(a-axisK); hA_in = Math.max(0,f2(a));
+      rB_in = Math.abs(b-axisK); hB_in = Math.max(0,f2(b));
+    } else {
+      // No inner function: cap goes from axis (r=0) to outer,
+      // but ONLY if the axis actually passes near this x (rare for offset axis)
+      // For offset axis (hasOffsetAxis), there IS no inner — the shape
+      // is a single curved sheet; we still need end caps from h=0 to h=f(x)
+      // at the radius r(x), i.e. a flat annular-like patch is NOT needed —
+      // instead we cap with a vertical wall at x=a and x=b from height 0 to f(x)
+      rA_in = rA_out; hA_in = 0;
+      rB_in = rB_out; hB_in = 0;
+    }
+    var capA = buildEndCapAnnular(rA_in, hA_in, rA_out, hA_out, nA);
+    var capB = buildEndCapAnnular(rB_in, hB_in, rB_out, hB_out, nA);
+    verts = verts.concat(capA);
+    if(f2){ vertsIn = vertsIn.concat([]); } // inner surface needs no separate cap (shares capA/capB)
+    else { verts = verts.concat(capB); }
+    if(f2){ verts = verts.concat(capB); }
   }
 
   // Store extra meshes
