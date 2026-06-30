@@ -253,11 +253,21 @@ function calcVol(ui){
   try{
     var fns=ui.fns.map(function(e){return mkFn(e);});
     var f=fns[0];
-    var g=(ui.method==="washer"&&fns.length>1)?fns[1]:null;
+    // g is the second function for ANY method (washer, shell, or disk with extra fn)
+    // not just washer — this was the critical bug
+    var g=(fns.length>1)?fns[1]:null;
     // Ensure f is the outer (larger) function to avoid negative volume
+    // Sample at multiple points (not just midpoint) to handle curves that cross
     if(g){
-      var mid2=(ui.a+ui.b)/2;
-      try{ if(g(mid2)>f(mid2)){var tmp=f;f=g;g=tmp;} }catch(e){}
+      var samples=[0.25,0.5,0.75].map(function(t){return ui.a+(ui.b-ui.a)*t;});
+      var fSum=0,gSum=0,validCount=0;
+      samples.forEach(function(xs){
+        try{
+          var fv=f(xs), gv=g(xs);
+          if(isFinite(fv)&&isFinite(gv)){ fSum+=fv; gSum+=gv; validCount++; }
+        }catch(e){}
+      });
+      if(validCount>0 && gSum>fSum){ var tmp=f;f=g;g=tmp; }
     }
     var a=ui.a,b=ui.b,k=ui.k||0,N=1200,V=0;
     if(ui.method==="disk"){
@@ -510,6 +520,34 @@ function draw2d(ui, rectX){
          Washer: right = farther fn,   left  = closer fn
          Shell:  right = f(y),         left  = axis; radius = |y − axisY|
   ──────────────────────────────────────────────────── */
+  // ── Inverse function finder (bisection) ──────────────────────
+  // Find x such that fn(x) = target. Skips NaN (sqrt<0, ln≤0, etc.)
+  function invertFnAt(fn, target){
+    if(!fn) return null;
+    var pad2 = Math.abs(b-a)*0.15;
+    var extLo = a - pad2, scanHi = b + pad2;
+    var nS = 400, dS = (scanHi - extLo) / nS;
+    var prev = null, prevX = null;
+    for(var _i = 0; _i <= nS; _i++){
+      var _x = extLo + _i * dS, _v;
+      try{ _v = fn(_x) - target; }catch(e){ prev=null; continue; }
+      if(!isFinite(_v)){ prev=null; continue; }
+      if(prev !== null && prev * _v < 0){
+        var _lo=prevX, _hi=_x, _fp=prev;
+        for(var _j=0;_j<64;_j++){
+          var _m=(_lo+_hi)/2, _fm;
+          try{ _fm=fn(_m)-target; }catch(e){ break; }
+          if(!isFinite(_fm)) break;
+          if(Math.abs(_fm)<1e-10||((_hi-_lo)<1e-12)) return _m;
+          if(_fp*_fm<=0){_hi=_m;}else{_lo=_m;_fp=_fm;}
+        }
+        return (_lo+_hi)/2;
+      }
+      prev=_v; prevX=_x;
+    }
+    return null;
+  }
+
   var rx = (rectX!==undefined) ? rectX : (a+b)/2;
   rx = Math.max(a+0.001*(b-a), Math.min(b-0.001*(b-a), rx));
   var rectThick = Math.max((sx(b)-sx(a))*0.045, 6); // px width of strip
@@ -1114,26 +1152,30 @@ function render3d(zMin,zMax){
   });
 
   // ── Multi-surface rendering ──
-  // Strategy: draw inner (g fn) FIRST fully opaque, then outer (f fn) at 72% opacity.
-  // The semi-transparent outer lets the inner color show through clearly.
-  // depthMask stays true throughout for correct occlusion with axes.
+  // Draw order for correct transparency:
+  //   1. Axes (already drawn above)
+  //   2. Extra functions (3rd+) — opaque
+  //   3. Inner surface (g fn) — opaque red-orange
+  //   4. Outer surface (f fn) — semi-transparent blue (45%)
+  //      depthMask=false so inner fragments survive depth test
 
-  // Step 1: inner surface (g function) — vivid red-orange, fully opaque
-  if(meshIn.buf){
-    gl.depthMask(true);
-    drawM(meshIn, PALETTE3D[1], 1.0);
-  }
-
-  // Step 2: extra functions (3rd+) — opaque, distinct colors
+  // Step 1: extra functions
   _extraMeshes.forEach(function(m){
     gl.depthMask(true);
     drawM(m, m.col, 1.0);
   });
 
-  // Step 3: outer solid (f function) — semi-transparent blue so inner shows through
-  // depthMask false prevents outer from occluding inner in depth buffer
+  // Step 2: inner surface — fully opaque, writes to depth buffer
+  if(meshIn.buf){
+    gl.depthMask(true);
+    drawM(meshIn, PALETTE3D[1], 1.0);
+  }
+
+  // Step 3: outer surface — semi-transparent, NO depth write
+  // This lets the opaque inner surface show through at all viewing angles
   gl.depthMask(false);
-  drawM(mesh, PALETTE3D[0], 0.68);
+  var outerAlpha = meshIn.buf ? 0.42 : 0.92; // transparent only when inner exists
+  drawM(mesh, PALETTE3D[0], outerAlpha);
   gl.depthMask(true);
 }
 
@@ -1167,51 +1209,99 @@ function buildRevSurface(rFn,zFn,tMin,tMax,nT,nA){
 // Height: hFn(x) = top of shell at position x
 // botFn(x) = bottom of shell (or 0 if single function)
 // pt = [r·cos(θ),  height,  r·sin(θ)]
+// ── Surface of revolution around a VERTICAL axis (y-axis or x=k) ──
+// Revolves the curve (x, hFn(x)) for x in [xMin,xMax] around the
+// vertical line x=axisK. Radius at each x is r(x) = x - axisK.
+// Produces ONE smooth lateral surface (no per-band caps).
+// If botFn is given, also returns top/bottom cap info via the
+// returned object so the caller can build a proper annular cap.
 function buildShellSurfaceVerticalX(hFn, botFn, xMin, xMax, nX, nA, axisK){
   axisK = axisK||0;
   var verts=[], dX=(xMax-xMin)/nX, dA=2*Math.PI/nA;
   function push(p,n){verts.push(p[0],p[1],p[2],n[0],n[1],n[2]);}
+  function norm3(n){var l=Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2])||1;return[n[0]/l,n[1]/l,n[2]/l];}
+  function cross3(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+  function sub3(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
 
-  for(var i=0;i<nX;i++){
-    var x0=xMin+i*dX, x1=x0+dX;
-    // radius = distance from axis
-    var r0=Math.abs(x0-axisK), r1=Math.abs(x1-axisK);
-    // height = function value at this x
-    var h0=Math.max(0,hFn(x0)), h1=Math.max(0,hFn(x1));
-    var b0=botFn?Math.max(0,botFn(x0)):0, b1=botFn?Math.max(0,botFn(x1)):0;
-    if(!isFinite(h0)||!isFinite(h1)) continue;
+  // Sample the curve along x: each sample gives (radius, height)
+  var pts = [];
+  for(var i=0; i<=nX; i++){
+    var x = xMin + i*dX;
+    var r = x - axisK; // SIGNED radius (can be negative if x<axisK)
+    var h = hFn(x);
+    if(!isFinite(h)) h = 0;
+    pts.push({r: r, h: Math.max(0,h)});
+  }
+
+  // Build lateral surface as a continuous ribbon (one smooth skin)
+  for(var i=0; i<nX; i++){
+    var r0=Math.abs(pts[i].r),   h0=pts[i].h;
+    var r1=Math.abs(pts[i+1].r), h1=pts[i+1].h;
 
     for(var j=0;j<nA;j++){
-      var a0=j*dA, a1=a0+dA;
-      var c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+      var ang0=j*dA, ang1=ang0+dA;
+      var c0=Math.cos(ang0),s0=Math.sin(ang0),c1=Math.cos(ang1),s1=Math.sin(ang1);
 
-      // Outer surface at r0 and r1
-      // Top ring
-      var T00=[r0*c0,h0,r0*s0], T01=[r0*c1,h0,r0*s1];
-      var T10=[r1*c0,h1,r1*s0], T11=[r1*c1,h1,r1*s1];
-      // Bottom ring
-      var B00=[r0*c0,b0,r0*s0], B01=[r0*c1,b0,r0*s1];
-      var B10=[r1*c0,b1,r1*s0], B11=[r1*c1,b1,r1*s1];
+      var P00=[r0*c0,h0,r0*s0], P01=[r0*c1,h0,r0*s1];
+      var P10=[r1*c0,h1,r1*s0], P11=[r1*c1,h1,r1*s1];
 
-      // Outer lateral wall (between r0 and r1 bands)
-      var nO0=[c0,0,s0],nO1=[c1,0,s1];
-      push(B00,nO0);push(T00,nO0);push(B01,nO1);
-      push(T00,nO0);push(T01,nO1);push(B01,nO1);
-      // Also close between adjacent x-slices
-      push(B00,nO0);push(B10,nO0);push(T00,nO0);
-      push(B10,nO0);push(T10,nO0);push(T00,nO0);
+      var n0 = norm3(cross3(sub3(P10,P00), sub3(P01,P00)));
+      var n1 = norm3(cross3(sub3(P11,P10), sub3(P01,P10)));
 
-      // Top cap (connects t0 to t1 ring at this angular slice)
-      var nTop=[0,1,0];
-      push(T00,nTop);push(T10,nTop);push(T01,nTop);
-      push(T10,nTop);push(T11,nTop);push(T01,nTop);
-
-      // Bottom cap
-      var nBot=[0,-1,0];
-      push(B00,nBot);push(B01,nBot);push(B10,nBot);
-      push(B01,nBot);push(B11,nBot);push(B10,nBot);
+      push(P00,n0); push(P10,n0); push(P01,n0);
+      push(P10,n1); push(P11,n1); push(P01,n1);
     }
   }
+
+  // Bottom cap: disk at h=botFn(xMin) [or 0] closing the smallest-x end
+  // Top cap: disk at h=hFn at the largest-x end
+  // Only needed if NOT building an inner surface (botFn null means
+  // this curve forms the outer skin and needs end caps)
+  if(!botFn){
+    // End cap at x=xMin (first point): disk from r=0 to r=pts[0].r at h=pts[0].h
+    var r_first = Math.abs(pts[0].r), h_first = pts[0].h;
+    if(r_first > 1e-6){
+      for(var j=0;j<nA;j++){
+        var ang0=j*dA, ang1=ang0+dA;
+        var c0=Math.cos(ang0),s0=Math.sin(ang0),c1=Math.cos(ang1),s1=Math.sin(ang1);
+        var center=[0,h_first,0];
+        var edge0=[r_first*c0,h_first,r_first*s0];
+        var edge1=[r_first*c1,h_first,r_first*s1];
+        var nCap=[0,1,0];
+        push(center,nCap); push(edge1,nCap); push(edge0,nCap);
+      }
+    }
+    // End cap at x=xMax (last point)
+    var nLast=pts.length-1;
+    var r_last = Math.abs(pts[nLast].r), h_last = pts[nLast].h;
+    if(r_last > 1e-6){
+      for(var j=0;j<nA;j++){
+        var ang0=j*dA, ang1=ang0+dA;
+        var c0=Math.cos(ang0),s0=Math.sin(ang0),c1=Math.cos(ang1),s1=Math.sin(ang1);
+        var center2=[0,h_last,0];
+        var edge0b=[r_last*c0,h_last,r_last*s0];
+        var edge1b=[r_last*c1,h_last,r_last*s1];
+        var nCap2=[0,1,0];
+        push(center2,nCap2); push(edge0b,nCap2); push(edge1b,nCap2);
+      }
+    }
+    // Bottom flat disk at h=0 spanning r=0 to max radius along the path
+    // (only meaningful when botFn is null, i.e. shell from 0 to f(x))
+    var maxR=0;
+    for(var pi=0; pi<pts.length; pi++) maxR=Math.max(maxR, Math.abs(pts[pi].r));
+    if(maxR > 1e-6){
+      for(var j=0;j<nA;j++){
+        var ang0=j*dA, ang1=ang0+dA;
+        var c0=Math.cos(ang0),s0=Math.sin(ang0),c1=Math.cos(ang1),s1=Math.sin(ang1);
+        var bc=[0,0,0];
+        var be0=[maxR*c0,0,maxR*s0];
+        var be1=[maxR*c1,0,maxR*s1];
+        var nBot=[0,-1,0];
+        push(bc,nBot); push(be0,nBot); push(be1,nBot);
+      }
+    }
+  }
+
   return verts;
 }
 
